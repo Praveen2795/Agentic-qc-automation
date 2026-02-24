@@ -78,13 +78,13 @@ The full architecture is available in two formats:
 #### 3. AI Gap Analysis `[CoT Prompting] [Few-Shot from Correction Store]`
 The Gap Analysis agent finds gaps using **two distinct strategies**:
 
-**Category 1 — Detected in This PnP (CoT reasoning)**
+**Reasoning — Gaps Found in This PnP (CoT)**
 - Reviews the draft config and catches **structural & logical gaps**:
   - Missing data source, field name, or tolerance
   - Implicit dependencies between steps
   - Ambiguous ordering or edge cases
 
-**Category 2 — Predicted from Similar QCs (Correction Store retrieval)**
+**Memory — Gaps Predicted from Past QCs (Correction Store retrieval)**
 - Retrieves past completed QC configs from the **Correction Store** — focusing on QCs with similar business units, rule types, or source systems
 - Surfaces patterns the AI learned from previous onboardings:
   - *"3 previous QCs using TSYS + Debt Manager required a Thursday-only comparison rule — does this apply here?"*
