@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic QC Automation - Architecture</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            padding: 40px;
+        }
+        h1 { text-align: center; font-size: 28px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
+        .subtitle { text-align: center; font-size: 14px; color: #888; margin-bottom: 40px; }
+
+        .diagram { max-width: 1200px; margin: 0 auto; }
+
+        .phase { border-radius: 16px; padding: 32px; margin-bottom: 24px; position: relative; }
+        .phase-label {
+            font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            color: #fff; display: inline-block; padding: 4px 14px; border-radius: 20px; margin-bottom: 20px;
+        }
+        .phase-zero { background: #fce4ec; border: 2px solid #ef9a9a; }
+        .phase-zero .phase-label { background: #c62828; }
+        .phase-a { background: #e8f0fe; border: 2px solid #b3d4fc; }
+        .phase-a .phase-label { background: #1565c0; }
+        .phase-b { background: #f3e8fd; border: 2px solid #d1b3fc; }
+        .phase-b .phase-label { background: #7b1fa2; }
+        .phase-infra { background: #e8f5e9; border: 2px solid #a5d6a7; }
+        .phase-infra .phase-label { background: #2e7d32; }
+        .phase-output { background: #fff3e0; border: 2px solid #ffcc80; }
+        .phase-output .phase-label { background: #e65100; }
+        .phase-assumptions { background: #fff; border: 2px solid #bdbdbd; }
+        .phase-assumptions .phase-label { background: #616161; }
+
+        .phase-title { font-size: 20px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
+        .phase-desc { font-size: 14px; color: #666; margin-bottom: 24px; line-height: 1.6; }
+
+        .flow-row { display: flex; align-items: flex-start; justify-content: center; gap: 20px; margin-bottom: 8px; }
+        .arrow-right { display: flex; align-items: center; font-size: 24px; color: #999; padding: 0 4px; align-self: center; }
+
+        .card {
+            background: #fff; border-radius: 12px; padding: 20px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e0e0e0;
+            min-width: 200px; max-width: 280px; text-align: center;
+        }
+        .card-icon { font-size: 28px; margin-bottom: 8px; }
+        .card-title { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 6px; }
+        .card-desc { font-size: 12px; color: #777; line-height: 1.5; }
+        .card-highlight { border: 2px solid #4caf50; background: #f1f8e9; }
+        .card-warning { border: 2px solid #ff9800; background: #fff8e1; }
+        .card-danger { border: 2px solid #e53935; background: #ffebee; }
+
+        .grid-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .grid-card {
+            background: #fff; border-radius: 10px; padding: 14px 20px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06); border: 1px solid #e0e0e0;
+            text-align: center; min-width: 120px;
+        }
+        .grid-card-title { font-size: 13px; font-weight: 600; color: #333; }
+        .grid-card-desc { font-size: 11px; color: #999; margin-top: 4px; }
+
+        .section-label {
+            font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 12px; text-align: center;
+        }
+
+        .divider { display: flex; align-items: center; justify-content: center; margin: 16px 0; gap: 12px; }
+        .divider-line { height: 1px; flex: 1; background: #ddd; }
+        .divider-text { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+
+        .connection { display: flex; justify-content: center; align-items: center; margin: 16px 0; }
+        .connection-label {
+            font-size: 11px; color: #666; font-style: italic; background: #f5f5f5;
+            padding: 4px 12px; border-radius: 12px; border: 1px solid #ddd;
+        }
+
+        .two-col { display: flex; gap: 24px; justify-content: center; }
+        .two-col > div { flex: 1; max-width: 580px; }
+        .three-col { display: flex; gap: 24px; justify-content: center; margin-bottom: 16px; }
+        .three-col > div { flex: 1; }
+
+        .or-badge {
+            display: inline-block; background: #e53935; color: #fff; font-size: 11px;
+            font-weight: 700; padding: 3px 10px; border-radius: 12px; letter-spacing: 1px;
+        }
+
+        .assumption-row {
+            display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px;
+        }
+        .assumption-icon {
+            font-size: 18px; flex-shrink: 0; margin-top: 2px;
+        }
+        .assumption-text { font-size: 13px; color: #555; line-height: 1.5; }
+        .assumption-text strong { color: #1a1a2e; }
+    </style>
+</head>
+<body>
+    <h1>Agentic QC Automation</h1>
+    <p class="subtitle">End-to-End Architecture for Scalable Quality Control Automation &mdash; Worst-Case Design</p>
+
+    <div class="diagram">
+
+        <!-- ASSUMPTIONS -->
+        <div class="phase phase-assumptions">
+            <span class="phase-label">Assumptions</span>
+            <div class="phase-title">Design Assumptions (Worst-Case Planning)</div>
+            <div class="phase-desc">This architecture is designed for the worst-case scenario. We have not yet validated LLM performance against real PnP documents. These assumptions ensure the design remains viable regardless of experimental outcomes.</div>
+
+            <div class="three-col">
+                <div>
+                    <div class="assumption-row">
+                        <div class="assumption-icon">⚠️</div>
+                        <div class="assumption-text"><strong>LLM parsing accuracy is unknown.</strong> We assume it could be as low as 50% initially. The design includes a self-improvement loop — SME corrections feed back as training examples, so accuracy improves with every QC onboarded.</div>
+                    </div>
+                    <div class="assumption-row">
+                        <div class="assumption-icon">⚠️</div>
+                        <div class="assumption-text"><strong>PnP documents vary widely in format</strong> — some structured, some narrative, some scanned. The AI parsing pipeline is designed to handle multiple formats, with reflection and iterative refinement for complex documents.</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="assumption-row">
+                        <div class="assumption-icon">⚠️</div>
+                        <div class="assumption-text"><strong>Pass/fail logic is mostly deterministic.</strong> Most validation runs on pre-built, tested, auditable Python. Exception: note analysis uses LLM but outputs structured results with a REVIEW flag when uncertain — humans make the final call.</div>
+                    </div>
+                    <div class="assumption-row">
+                        <div class="assumption-icon">⚠️</div>
+                        <div class="assumption-text"><strong>No automated production actions.</strong> The system generates reports for human review. It does not close QCs, update records, or take irreversible actions.</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="assumption-row">
+                        <div class="assumption-icon">⚠️</div>
+                        <div class="assumption-text"><strong>~8-10 rule types will cover most QCs.</strong> This is an estimate. The actual number will be refined during experimentation. Architecture supports adding new rule types at any time.</div>
+                    </div>
+                    <div class="assumption-row">
+                        <div class="assumption-icon">⚠️</div>
+                        <div class="assumption-text"><strong>An experimentation phase is required</strong> before full rollout to validate LLM accuracy, rule coverage, and connector feasibility with real data.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PHASE 0 -->
+        <div class="phase phase-zero">
+            <span class="phase-label">Phase 0</span>
+            <div class="phase-title">Experimentation &amp; Validation (Before Full Build)</div>
+            <div class="phase-desc">Before committing to the full architecture, run a controlled experiment with 3-5 representative PnP documents to validate key assumptions and calibrate the design.</div>
+
+            <div class="flow-row">
+                <div class="card">
+                    <div class="card-icon">📄</div>
+                    <div class="card-title">Select 3-5 PnP Documents</div>
+                    <div class="card-desc">Choose documents that vary in complexity, business unit, and format. Include at least one simple and one complex QC.</div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card">
+                    <div class="card-icon">🤖</div>
+                    <div class="card-title">Test LLM Parsing</div>
+                    <div class="card-desc">Feed each document to the LLM. Can it identify the validation steps, source systems, fields, and comparison types correctly?</div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card">
+                    <div class="card-icon">👤</div>
+                    <div class="card-title">SME Grades Output</div>
+                    <div class="card-desc">SMEs score the AI output — what percentage of steps were correctly parsed? What was missed or wrong?</div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card card-warning">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">Calibrate the Design</div>
+                    <div class="card-desc">Results determine how much to rely on AI vs. human input in Phase A. Also validates rule type coverage and connector needs.</div>
+                </div>
+            </div>
+
+            <div class="divider">
+                <div class="divider-line"></div>
+                <span class="divider-text">Experiment outcomes determine the Phase A path weighting</span>
+                <div class="divider-line"></div>
+            </div>
+
+            <div class="flow-row">
+                <div class="card" style="max-width: 320px; border: 2px solid #4caf50;">
+                    <div class="card-title" style="color:#2e7d32;">If Accuracy is 80%+</div>
+                    <div class="card-desc">AI-assisted path is primary. Reflection loop is optional. SME review is a quick validation pass.</div>
+                </div>
+                <div class="card" style="max-width: 320px; border: 2px solid #ff9800;">
+                    <div class="card-title" style="color:#e65100;">If Accuracy is 50-80%</div>
+                    <div class="card-desc">AI-assisted path with mandatory Reflection loop. SME review is a significant editing step. Consider few-shot examples.</div>
+                </div>
+                <div class="card" style="max-width: 320px; border: 2px solid #e53935;">
+                    <div class="card-title" style="color:#c62828;">If Accuracy is Below 50%</div>
+                    <div class="card-desc">Add fine-tuning, structured prompting, and section-by-section parsing. SME corrections feed back as training examples to improve AI over iterations.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONNECTION -->
+        <div class="connection">
+            <div style="text-align:center;">
+                <div style="width:2px;height:16px;background:#999;margin:0 auto;"></div>
+                <div style="font-size:18px;color:#999;">▼</div>
+            </div>
+        </div>
+
+        <!-- PHASE A -->
+        <div class="phase phase-a">
+            <span class="phase-label">Phase A</span>
+            <div class="phase-title">Onboarding a New QC Process (Done Once Per QC)</div>
+            <div class="phase-desc">AI parses the policy document, identifies gaps in the PnP, maps steps to rules, and self-reviews its work. SME fills in missing knowledge, approves the config, and corrections feed back to improve accuracy over time. Only re-triggered if the policy document changes.</div>
+
+            <!-- Row 1: Extract & Map -->
+            <div class="flow-row">
+                <div class="card">
+                    <div class="card-icon">📄</div>
+                    <div class="card-title">Policy Document</div>
+                    <div class="card-desc">The existing PnP document that QC analysts follow today.</div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card">
+                    <div class="card-icon">🤖</div>
+                    <div class="card-title">AI Extracts Steps</div>
+                    <div class="card-desc">LLM reads the PnP and extracts each validation step in natural language. <span style="font-size:11px;color:#1565c0;display:block;margin-top:6px;">Uses relevant past corrections from the Correction Store as few-shot examples in the prompt.</span></div>
+                    <div style="margin-top:8px;"><span style="font-size:9px;background:#1565c0;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">CoT Prompting</span></div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card" style="border: 2px solid #7b1fa2;">
+                    <div class="card-icon">🧩</div>
+                    <div class="card-title">AI Maps to Config</div>
+                    <div class="card-desc">For each step, AI selects the <strong>rule type</strong>, <strong>data source</strong>, and <strong>specific fields</strong> to compare. Past corrections guide the mapping. Produces a complete draft config file.</div>
+                    <div style="margin-top:8px;"><span style="font-size:9px;background:#7b1fa2;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">CoT Prompting</span> <span style="font-size:9px;background:#2e7d32;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">Few-Shot</span></div>
+                </div>
+            </div>
+
+            <div class="connection">
+                <div style="text-align:center;">
+                    <div style="width:2px;height:12px;background:#999;margin:0 auto;"></div>
+                    <div style="font-size:14px;color:#999;">▼</div>
+                </div>
+            </div>
+
+            <!-- Row 2: Gap Analysis -->
+            <div class="flow-row">
+                <div class="card" style="border: 2px solid #e53935; max-width: 340px;">
+                    <div class="card-icon">🔍</div>
+                    <div class="card-title">AI Gap Analysis</div>
+                    <div class="card-desc">AI reviews the draft config against the PnP and flags what's <strong>missing or ambiguous</strong>:<br><br>
+                        <span style="font-size:11px;line-height:1.6;">
+                        • "Step 3 says 'verify amount is correct' but doesn't specify which system or tolerance"<br>
+                        • "No fallback source specified if System A is unavailable"<br>
+                        • "Steps 4-5 have an implicit dependency not stated in the PnP"<br>
+                        </span>
+                        <span style="font-size:11px;color:#c62828;display:block;margin-top:6px;">Generates a <strong>PnP Quality Score</strong> — gives the org data on which PnPs need rewriting.</span>
+                    </div>
+                    <div style="margin-top:8px;"><span style="font-size:9px;background:#1565c0;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">CoT Prompting</span></div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card" style="border: 2px solid #e65100; max-width: 340px;">
+                    <div class="card-icon">👤</div>
+                    <div class="card-title">SME Fills Gaps</div>
+                    <div class="card-desc">SME provides the knowledge that's <strong>not in the PnP</strong> — tribal knowledge, workarounds, implicit dependencies, tolerances, fallback sources. This is a structured interview: AI asks, SME answers.<span style="font-size:11px;color:#e65100;display:block;margin-top:6px;">If a step has multiple possible meanings, AI presents options for SME to choose from.</span></div>
+                    <div style="margin-top:8px;"><span style="font-size:9px;background:#e65100;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">ToT — Multiple Interpretations</span></div>
+                </div>
+            </div>
+
+            <div class="connection">
+                <div style="text-align:center;">
+                    <div style="width:2px;height:12px;background:#999;margin:0 auto;"></div>
+                    <div style="font-size:14px;color:#999;">▼</div>
+                </div>
+            </div>
+
+            <!-- Row 3: Reflect & Approve -->
+            <div class="flow-row">
+                <div class="card" style="border: 2px solid #1565c0;">
+                    <div class="card-icon">🔄</div>
+                    <div class="card-title">AI Self-Review (Reflection)</div>
+                    <div class="card-desc">Reviews the <strong>gap-filled</strong> config — checking for missed steps, incorrect rule mappings, or inconsistencies introduced during gap-filling. Runs up to <strong>3 iterations max</strong>. <span style="font-size:11px;color:#1565c0;display:block;margin-top:6px;">Safeguard: capped at 3 loops. If still uncertain, flags items for SME.</span></div>
+                    <div style="margin-top:8px;"><span style="font-size:9px;background:#1565c0;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">Reflection Pattern</span> <span style="font-size:9px;background:#616161;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">Max 3 Iterations</span></div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card">
+                    <div class="card-icon">✅</div>
+                    <div class="card-title">SME Final Approval</div>
+                    <div class="card-desc">QC analyst reviews the complete config — including gap-fills and AI self-review results. Approves, adjusts, or overrides. Nothing runs without human sign-off.</div>
+                </div>
+            </div>
+
+            <div class="divider">
+                <div class="divider-line"></div>
+                <span class="divider-text">Continuous improvement loop</span>
+                <div class="divider-line"></div>
+            </div>
+
+            <div class="flow-row">
+                <div class="card" style="border: 2px solid #1565c0; max-width: 280px;">
+                    <div class="card-icon">📈</div>
+                    <div class="card-title">SME Corrections Captured</div>
+                    <div class="card-desc">Captures both <strong>corrections</strong> (AI got it wrong) and <strong>gap-fills</strong> (PnP didn't specify it). Both are stored as structured records with the original PnP text.</div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card" style="border: 2px solid #e65100; max-width: 280px; background: #fff3e0;">
+                    <div class="card-icon">🧠</div>
+                    <div class="card-title">Correction Store</div>
+                    <div class="card-desc">Long-term memory. Stores corrections <strong>and</strong> gap-fills: PnP snippet → AI output → SME-corrected output. Also stores common defaults (e.g., "tolerance for dollar amounts is usually $0.01").</div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card" style="border: 2px solid #4caf50; max-width: 280px;">
+                    <div class="card-icon">🎯</div>
+                    <div class="card-title">AI Gets Smarter Over Time</div>
+                    <div class="card-desc">Next onboarding pulls relevant past corrections as few-shot examples. By QC #50, the AI has a rich library from your organization. <span style="font-size:11px;color:#2e7d32;display:block;margin-top:6px;">Scales: few-shot → RAG retrieval → fine-tuning as the library grows.</span></div>
+                </div>
+            </div>
+
+            <div class="flow-row" style="justify-content: center;">
+                <div class="card card-highlight" style="max-width: 400px;">
+                    <div class="card-icon">🔒</div>
+                    <div class="card-title">Locked &amp; Versioned Configuration</div>
+                    <div class="card-desc">The approved config is saved as the single source of truth. It specifies exactly which systems to query, which fields to compare, and which validation rules to use. Versioned for audit trail.</div>
+                </div>
+            </div>
+
+            <div class="divider">
+                <div class="divider-line"></div>
+                <span class="divider-text">If AI encounters an unknown check type</span>
+                <div class="divider-line"></div>
+            </div>
+
+            <div class="flow-row">
+                <div class="card card-warning">
+                    <div class="card-icon">⚠️</div>
+                    <div class="card-title">New Check Type Found</div>
+                    <div class="card-desc">AI identifies a validation step that doesn't match any existing rule type. Flagged and routed to the engineering team.</div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card">
+                    <div class="card-icon">👨‍💻</div>
+                    <div class="card-title">Engineering Builds New Rule</div>
+                    <div class="card-desc">Developer creates a new reusable rule function. Goes through standard code review, testing, and deployment.</div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card card-highlight">
+                    <div class="card-icon">♻️</div>
+                    <div class="card-title">Available for All QCs</div>
+                    <div class="card-desc">New rule becomes available to every QC — not just this one. This need diminishes over time as the library grows.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONNECTION -->
+        <div class="connection">
+            <div style="text-align:center;">
+                <div style="width:2px;height:16px;background:#999;margin:0 auto;"></div>
+                <div class="connection-label">Locked config is read each month — LLM orchestrates execution, verification layer audits every run</div>
+                <div style="width:2px;height:16px;background:#999;margin:0 auto;"></div>
+                <div style="font-size:18px;color:#999;">▼</div>
+            </div>
+        </div>
+
+        <!-- PHASE B -->
+        <div class="phase phase-b">
+            <span class="phase-label">Phase B</span>
+            <div class="phase-title">Monthly QC Execution</div>
+            <div class="phase-desc">Runs automatically as a scheduled batch job (with manual re-run option). An LLM orchestrator reads the locked config and calls the right tools in the right order — handling dependencies, multi-hop lookups, and edge cases. A <strong>deterministic verification layer</strong> audits every run to ensure completeness and correctness. Results are <strong>PASS</strong>, <strong>FAIL</strong>, or <strong>REVIEW</strong>.</div>
+
+            <!-- Row 1: Trigger → Orchestrator -->
+            <div class="flow-row">
+                <div class="card">
+                    <div class="card-icon">⏰</div>
+                    <div class="card-title">Scheduled Batch Trigger</div>
+                    <div class="card-desc">Runs automatically on a fixed monthly schedule (e.g., 3rd business day). All QCs execute overnight. Manual re-run available on-demand for exceptions.</div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card" style="border: 2px solid #7b1fa2;">
+                    <div class="card-icon">🤖</div>
+                    <div class="card-title">LLM Orchestrator</div>
+                    <div class="card-desc">Reads the locked config and <strong>reasons</strong> through execution — decides the order to call tools, handles step dependencies, manages multi-hop lookups, and applies fallback logic when needed.</div>
+                    <div style="margin-top:8px;"><span style="font-size:9px;background:#7b1fa2;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">Tool Use Pattern</span> <span style="font-size:9px;background:#1565c0;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">CoT Prompting</span></div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card" style="border: 2px solid #c62828;">
+                    <div class="card-icon">🔁</div>
+                    <div class="card-title">For Each Account in Sample</div>
+                    <div class="card-desc">
+                        <strong>Step 1:</strong> LLM calls the right connectors to pull data (handles multi-hop: account → case → document)<br><br>
+                        <strong>Step 2:</strong> LLM calls the right rule functions for each validation check, passing the correct data<br><br>
+                        <strong>Step 3:</strong> Each check returns <span style="color:#2e7d32;font-weight:600;">PASS</span>, <span style="color:#c62828;font-weight:600;">FAIL</span>, or <span style="color:#e65100;font-weight:600;">REVIEW</span> with evidence
+                    </div>
+                </div>
+            </div>
+
+            <div class="connection">
+                <div style="text-align:center;">
+                    <div style="width:2px;height:12px;background:#999;margin:0 auto;"></div>
+                    <div style="font-size:14px;color:#999;">▼</div>
+                </div>
+            </div>
+
+            <!-- Row 2: Verification → Report -->
+            <div class="flow-row">
+                <div class="card" style="border: 2px solid #2e7d32; max-width: 340px;">
+                    <div class="card-icon">✅</div>
+                    <div class="card-title">Deterministic Verification Layer</div>
+                    <div class="card-desc">A Python script (no AI) that audits the LLM’s execution:<br><br>
+                        <span style="font-size:11px;line-height:1.6;">
+                        • Did the LLM execute <strong>every</strong> step in the config?<br>
+                        • Did it call the <strong>correct tools</strong> for each step?<br>
+                        • Did it use the <strong>correct data sources</strong>?<br>
+                        • Were any steps skipped or invented?<br>
+                        </span>
+                        <span style="font-size:11px;color:#c62828;display:block;margin-top:6px;">If verification fails → entire QC run is flagged as <strong>REVIEW</strong> with the reason.</span>
+                    </div>
+                    <div style="margin-top:8px;"><span style="font-size:9px;background:#2e7d32;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">Deterministic Python</span> <span style="font-size:9px;background:#616161;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">Audit Guard</span></div>
+                </div>
+                <div class="arrow-right">→</div>
+                <div class="card" style="max-width: 340px;">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">Generate Report</div>
+                    <div class="card-desc">Results compiled into a structured Excel report — same format teams use today. Each check is marked <strong>PASS</strong>, <strong>FAIL</strong>, or <strong>REVIEW</strong> (needs human judgment) — with full execution trace and evidence.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INFRA + OUTPUT side by side -->
+        <div class="two-col">
+            <!-- INFRA -->
+            <div class="phase phase-infra">
+                <span class="phase-label">Shared</span>
+                <div class="phase-title">Reusable Building Blocks</div>
+                <div class="phase-desc">Built once, reused across all 300+ QC processes. Adding a new QC means reusing what exists — not building from scratch.</div>
+
+                <div class="section-label">System Connectors (Built Once Per System)</div>
+                <div class="grid-row" style="margin-bottom: 20px;">
+                    <div class="grid-card"><div class="grid-card-title">TSYS</div><div class="grid-card-desc">Card processing</div></div>
+                    <div class="grid-card"><div class="grid-card-title">Debt Manager</div><div class="grid-card-desc">Collections</div></div>
+                    <div class="grid-card"><div class="grid-card-title">Imaging</div><div class="grid-card-desc">Documents</div></div>
+                    <div class="grid-card"><div class="grid-card-title">+ Others</div><div class="grid-card-desc">~15-20 estimated</div></div>
+                </div>
+
+                <div class="section-label">Validation Rules (Reusable Library)</div>
+                <div class="grid-row">
+                    <div class="grid-card"><div class="grid-card-title">Compare Numbers</div><div class="grid-card-desc">Dollar amounts, balances</div></div>
+                    <div class="grid-card"><div class="grid-card-title">Compare Dates</div><div class="grid-card-desc">Deadlines, timelines</div></div>
+                    <div class="grid-card"><div class="grid-card-title">Check Thresholds</div><div class="grid-card-desc">Above/below limits</div></div>
+                    <div class="grid-card"><div class="grid-card-title">Verify Timelines</div><div class="grid-card-desc">Action within N days</div></div>
+                    <div class="grid-card"><div class="grid-card-title">Document Exists</div><div class="grid-card-desc">Letter on file?</div></div>
+                    <div class="grid-card"><div class="grid-card-title">Conditional Logic</div><div class="grid-card-desc">If X, then Y</div></div>
+                    <div class="grid-card" style="border:2px solid #7b1fa2; background:#f3e8fd;"><div class="grid-card-title">Note Analysis <span style="font-size:9px;background:#7b1fa2;color:#fff;padding:2px 6px;border-radius:8px;vertical-align:middle;">LLM</span></div><div class="grid-card-desc">Free-text agent notes</div></div>
+                </div>
+                <p style="text-align:center; font-size:12px; color:#777; margin-top:16px;">Estimate: ~8-10 rule types will cover most QCs. Most are deterministic Python. Note analysis uses LLM with structured output and a REVIEW flag when confidence is low.</p>
+
+                <div class="section-label" style="margin-top: 20px;">AI Memory (Correction Store)</div>
+                <div class="grid-row">
+                    <div class="grid-card" style="border:2px solid #e65100; background:#fff3e0; min-width: 280px;">
+                        <div class="grid-card-title">🧠 Correction Store</div>
+                        <div class="grid-card-desc">Stores SME corrections from every onboarding as structured records. Fed back as few-shot examples during the next QC onboarding to improve AI accuracy.</div>
+                    </div>
+                </div>
+                <p style="text-align:center; font-size:12px; color:#777; margin-top:10px;">Early: few-shot examples in prompt &nbsp;→&nbsp; Growth: RAG retrieval for relevance &nbsp;→&nbsp; Scale: fine-tuning if needed</p>
+            </div>
+
+            <!-- OUTPUT -->
+            <div class="phase phase-output">
+                <span class="phase-label">Output</span>
+                <div class="phase-title">Human Review &amp; Sign-off</div>
+                <div class="phase-desc">The system produces reports. Humans make the final call. No QC is ever closed automatically.</div>
+
+                <div class="flow-row" style="flex-direction: column; align-items: center; gap: 8px;">
+                    <div class="card" style="max-width: 340px;">
+                        <div class="card-icon">📋</div>
+                        <div class="card-title">Structured Excel Report</div>
+                        <div class="card-desc">Same format teams use today. Each check shows <span style="color:#2e7d32;font-weight:600;">PASS</span>, <span style="color:#c62828;font-weight:600;">FAIL</span>, or <span style="color:#e65100;font-weight:600;">REVIEW</span> with evidence. REVIEW items are surfaced first for human attention.</div>
+                    </div>
+                    <div style="font-size:24px; color:#999;">↓</div>
+                    <div class="card" style="max-width: 340px;">
+                        <div class="card-icon">🖥️</div>
+                        <div class="card-title">SME Review Dashboard</div>
+                        <div class="card-desc">QC analysts focus on <span style="color:#e65100;font-weight:600;">REVIEW</span> items first — cases the system couldn't determine. PASS/FAIL items are spot-checked for quality. Analysts resolve each REVIEW as pass or fail.</div>
+                    </div>
+                    <div style="font-size:24px; color:#999;">↓</div>
+                    <div class="card card-highlight" style="max-width: 340px;">
+                        <div class="card-icon">✅</div>
+                        <div class="card-title">Human Final Approval</div>
+                        <div class="card-desc">A human SME always has the final sign-off. The system assists — it does not decide. This is automation of execution, not autonomy.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KEY DESIGN PRINCIPLES -->
+        <div style="background:#fff; border-radius:16px; padding:28px 32px; margin-top:24px; border:1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+            <div style="font-size:16px; font-weight:600; color:#1a1a2e; margin-bottom:16px;">Key Design Principles</div>
+            <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:220px;">
+                    <div style="font-size:13px; font-weight:600; color:#1565c0; margin-bottom:4px;">Configuration-Driven</div>
+                    <div style="font-size:12px; color:#777; line-height:1.5;">Adding a new QC = adding a new config file, not writing new code. Target: 30-40 QCs onboarded per quarter.</div>
+                </div>
+                <div style="flex:1; min-width:220px;">
+                    <div style="font-size:13px; font-weight:600; color:#7b1fa2; margin-bottom:4px;">Deterministic + Auditable</div>
+                    <div style="font-size:12px; color:#777; line-height:1.5;">Most rules are deterministic Python (same input = same output). Note analysis uses LLM but with structured output, REVIEW flags, and full audit trail.</div>
+                </div>
+                <div style="flex:1; min-width:220px;">
+                    <div style="font-size:13px; font-weight:600; color:#2e7d32; margin-bottom:4px;">Diminishing Engineering Effort</div>
+                    <div style="font-size:12px; color:#777; line-height:1.5;">Rule types and connectors are reusable. By Q3-Q4, most new QCs require zero code changes — just configuration.</div>
+                </div>
+                <div style="flex:1; min-width:220px;">
+                    <div style="font-size:13px; font-weight:600; color:#e65100; margin-bottom:4px;">Human-in-the-Loop</div>
+                    <div style="font-size:12px; color:#777; line-height:1.5;">Humans approve all configs and sign off on all results. No automated production actions. Full audit trail.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WORST CASE SAFEGUARDS -->
+        <div style="background:#ffebee; border-radius:16px; padding:28px 32px; margin-top:24px; border:2px solid #ef9a9a;">
+            <div style="font-size:16px; font-weight:600; color:#c62828; margin-bottom:16px;">Worst-Case Safeguards Built Into This Design</div>
+            <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:220px;">
+                    <div style="font-size:13px; font-weight:600; color:#c62828; margin-bottom:4px;">If AI Parsing Accuracy is Low</div>
+                    <div style="font-size:12px; color:#777; line-height:1.5;">Reflection loop, few-shot examples from SME corrections, structured prompting, and section-by-section parsing are available to improve accuracy iteratively.</div>
+                </div>
+                <div style="flex:1; min-width:220px;">
+                    <div style="font-size:13px; font-weight:600; color:#c62828; margin-bottom:4px;">If Rule Coverage is Low</div>
+                    <div style="font-size:12px; color:#777; line-height:1.5;">Architecture supports adding new rule types at any time. Each new rule immediately becomes available to all QCs.</div>
+                </div>
+                <div style="flex:1; min-width:220px;">
+                    <div style="font-size:13px; font-weight:600; color:#c62828; margin-bottom:4px;">If Source Systems Are Complex</div>
+                    <div style="font-size:12px; color:#777; line-height:1.5;">Data can be staged into a data lake first. Agents query staged data instead of live systems — safer and more auditable.</div>
+                </div>
+                <div style="flex:1; min-width:220px;">
+                    <div style="font-size:13px; font-weight:600; color:#c62828; margin-bottom:4px;">If Accuracy Needs Improve</div>
+                    <div style="font-size:12px; color:#777; line-height:1.5;">Reflection loop, few-shot examples, and fine-tuning are available levers. Each can be added incrementally without redesigning.</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
