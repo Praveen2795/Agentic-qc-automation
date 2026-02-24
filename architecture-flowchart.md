@@ -60,41 +60,51 @@ flowchart TB
 
         subgraph ROW1["Step 1: Extract & Map"]
             direction LR
-            A1["📄 Policy Document\n(PnP)"] --> A2["🤖 AI Extracts Steps\n━━━━━━━━━━\nLLM reads PnP, extracts\nvalidation steps in\nnatural language\n━━━━━━━━━━\n🏷️ CoT Prompting"]
-            A2 --> A3["🧩 AI Maps to Config\n━━━━━━━━━━\nSelects rule type,\ndata source, and fields\nfor each step.\nProduces draft config.\n━━━━━━━━━━\n🏷️ CoT + Few-Shot"]
+            A1["📄 Policy Document\n(PnP)"]
+            A2["🤖 AI Extracts Steps\n🏷️ CoT"]
+            A3["🧩 AI Maps to Config\n🏷️ CoT + Few-Shot"]
+            A1 --> A2 --> A3
         end
 
-        subgraph ROW2["Step 2: Gap Analysis & SME Collaborative Review"]
+        subgraph ROW2["Step 2: Gap Analysis & SME Review"]
             direction LR
-            A4["🔍 AI Gap Analysis\n━━━━━━━━━━\nReasoning: Gaps Found in This PnP\n• Missing data source/tolerance\n• Implicit dependencies\n• Ambiguous ordering\n━━━━━━━━━━\nMemory: Gaps Predicted from Past QCs\n(via Correction Store retrieval)\n• Patterns from past onboardings\n• Common gaps by BU / rule type\n━━━━━━━━━━\n📈 Improves with every QC onboarded\nGenerates PnP Quality Score\n🏷️ CoT + Few-Shot from Correction Store"] --> A5["🤝 SME Collaborative Review\n━━━━━━━━━━\nPart 1: Answer AI's questions\n(resolve identified gaps)\n\nPart 2: Confirm/reject AI predictions\n(from similar QCs)\n━━━━━━━━━━\nPart 3: Add domain knowledge\nAI couldn't know to ask:\n• System migration exceptions\n• Regulatory changes\n• Data timing constraints\n• Business rule overrides\n━━━━━━━━━━\n🏷️ Human-in-the-Loop\n🏷️ Domain Knowledge Capture"]
+            A4["🔍 AI Gap Analysis\n─────────\nReasoning: gaps in this PnP\nMemory: predicted from past QCs\n─────────\n🏷️ CoT + Few-Shot"]
+            A5["🤝 SME Collaborative Review\n─────────\n1. Answer AI's questions\n2. Confirm/reject predictions\n3. Add domain knowledge\n─────────\n🏷️ Human-in-the-Loop"]
+            A4 --> A5
         end
 
         subgraph ROW3["Step 3: Reflect & Approve"]
             direction LR
-            A6["🔄 AI Self-Review\n(Reflection)\n━━━━━━━━━━\nReviews gap-filled config.\nChecks for missed steps,\nwrong mappings,\ninconsistencies.\n━━━━━━━━━━\n🏷️ Reflection Pattern\n🏷️ Max 3 Iterations"] --> A7["✅ SME Final Approval\n━━━━━━━━━━\nReviews complete config.\nApproves, adjusts, or\noverrides. Nothing runs\nwithout human sign-off."]
+            A6["🔄 AI Self-Review\n🏷️ Reflection · Max 3"]
+            A7["✅ SME Final Approval"]
+            A6 --> A7
         end
 
-        ROW1 --> ROW2
-        ROW2 --> ROW3
+        ROW1 --> ROW2 --> ROW3
 
-        A7 --> LOCK["🔒 Locked & Versioned Configuration\nSingle source of truth.\nSpecifies systems, fields, and rules.\nVersioned for audit trail."]
+        A7 --> LOCK["🔒 Locked Config\n(versioned)"]
 
         subgraph IMPROVE["Continuous Improvement Loop"]
             direction LR
-            C1["📈 SME Corrections\nCaptured\n━━━━━━━━━━\nCaptures corrections\nand gap-fills as\nstructured records"] --> C2["🧠 Correction Store\n━━━━━━━━━━\nLong-term memory.\nPnP snippet → AI output\n→ SME-corrected output.\nStores common defaults."]
-            C2 --> C3["🎯 AI Gets Smarter\nOver Time\n━━━━━━━━━━\nFew-shot → RAG →\nFine-tuning as\nlibrary grows"]
+            C1["📈 SME Corrections\nCaptured"]
+            C2["🧠 Correction\nStore"]
+            C3["🎯 AI Gets Smarter\nfew-shot → RAG → fine-tune"]
+            C1 --> C2 --> C3
         end
 
         A7 --> C1
-        C3 -.->|"Fed back into next onboarding"| A2
-        C3 -.->|"Past gap-fills predict new gaps"| A4
+        C3 -.->|"improves extraction"| A2
+        C3 -.->|"predicts gaps"| A4
 
-        subgraph NEWRULE["If Unknown Check Type Found"]
+        subgraph NEWRULE["New Rule Path"]
             direction LR
-            N1["⚠️ New Check\nType Found"] --> N2["👨‍💻 Engineering\nBuilds New Rule"] --> N3["♻️ Available\nfor All QCs"]
+            N1["⚠️ Unknown Check\nType Found"]
+            N2["👨‍💻 Engineering\nBuilds Rule"]
+            N3["♻️ Available to\nAll QCs"]
+            N1 --> N2 --> N3
         end
 
-        A3 -.->|"If rule type doesn't exist"| N1
+        A3 -.->|"if rule type missing"| N1
     end
 ```
 
@@ -109,13 +119,17 @@ flowchart TB
 
         subgraph ROW1B["Step 1: Trigger → Orchestrate → Execute"]
             direction LR
-            B1["⏰ Scheduled\nBatch Trigger\n━━━━━━━━━━\nFixed monthly schedule\n(e.g., 3rd business day)\nManual re-run available"] --> B2["🤖 LLM Orchestrator\n━━━━━━━━━━\nReads locked config.\nReasons through execution:\n• Tool call order\n• Step dependencies\n• Multi-hop lookups\n• Fallback logic\n━━━━━━━━━━\n🏷️ Tool Use Pattern\n🏷️ CoT Prompting"]
-            B2 --> B3["🔁 For Each Account\nin Sample\n━━━━━━━━━━\n1. LLM calls connectors\n   (multi-hop: acct→case→doc)\n2. LLM calls rule functions\n3. Returns PASS / FAIL / REVIEW\n   with evidence"]
+            B1["⏰ Scheduled Trigger\n(monthly batch)"]
+            B2["🤖 LLM Orchestrator\n─────────\nReads locked config\nReasons through execution\n🏷️ Tool Use + CoT"]
+            B3["🔁 For Each Account\n─────────\n1. Call connectors\n2. Call rule functions\n3. PASS / FAIL / REVIEW"]
+            B1 --> B2 --> B3
         end
 
         subgraph ROW2B["Step 2: Verify → Report"]
             direction LR
-            B4["✅ Deterministic\nVerification Layer\n━━━━━━━━━━\nPython script (no AI) audits:\n• All config steps executed?\n• Correct tools called?\n• Correct data sources used?\n• Any steps skipped/invented?\n━━━━━━━━━━\nIf verification fails →\nentire QC = REVIEW\n━━━━━━━━━━\n🏷️ Deterministic Python\n🏷️ Audit Guard"] --> B5["📊 Generate Report\n━━━━━━━━━━\nStructured Excel report.\nEach check: PASS / FAIL / REVIEW\nFull execution trace.\nSame format teams use today."]
+            B4["✅ Verification Layer\n─────────\nPython (no AI) audits:\nAll steps executed?\nCorrect tools called?\n🏷️ Deterministic"]
+            B5["📊 Generate Report\n─────────\nExcel: PASS/FAIL/REVIEW\nwith evidence & trace"]
+            B4 --> B5
         end
 
         ROW1B --> ROW2B
@@ -128,32 +142,24 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    subgraph INFRA["🟢 SHARED INFRASTRUCTURE — Reusable Building Blocks"]
+    subgraph INFRA["🟢 SHARED INFRASTRUCTURE"]
         direction TB
 
-        subgraph CONNECTORS["System Connectors (Built Once Per System)"]
+        subgraph CONNECTORS["System Connectors"]
             direction LR
-            SC1["TSYS\nCard processing"]
-            SC2["Debt Manager\nCollections"]
-            SC3["Imaging\nDocuments"]
-            SC4["+ Others\n~15-20 estimated"]
+            SC1["TSYS"] ~~~ SC2["Debt Manager"] ~~~ SC3["Imaging"] ~~~ SC4["+Others\n~15-20"]
         end
 
-        subgraph RULES["Validation Rules (Reusable Library)"]
+        subgraph RULES["Validation Rules"]
             direction LR
-            R1["Compare Numbers\nDollar amounts"]
-            R2["Compare Dates\nDeadlines"]
-            R3["Check Thresholds\nAbove/below limits"]
-            R4["Verify Timelines\nAction within N days"]
-            R5["Document Exists\nLetter on file?"]
-            R6["Conditional Logic\nIf X, then Y"]
-            R7["Note Analysis 🏷️LLM\nFree-text agent notes"]
+            R1["Compare\nNumbers"] ~~~ R2["Compare\nDates"] ~~~ R3["Thresholds"] ~~~ R4["Timelines"]
+            R5["Doc Exists"] ~~~ R6["Conditional"] ~~~ R7["Note Analysis\n🏷️ LLM"]
         end
 
-        subgraph MEMORY["AI Memory (Correction Store)"]
+        subgraph MEMORY["Correction Store"]
             direction LR
-            M1["🧠 Correction Store\nStores SME corrections\nas structured records.\nFed back as few-shot\nexamples at onboarding."]
-            M2["Scaling path:\nFew-shot → RAG → Fine-tuning"]
+            M1["🧠 Long-term memory\nSME corrections + gap-fills"]
+            M2["few-shot → RAG → fine-tune"]
         end
     end
 ```
@@ -166,9 +172,10 @@ flowchart TB
 flowchart TB
     subgraph OUTPUT["🟠 OUTPUT — Human Review & Sign-off"]
         direction TB
-        O1["📋 Structured Excel Report\nPASS / FAIL / REVIEW with evidence.\nREVIEW items surfaced first."]
-        O1 --> O2["🖥️ SME Review Dashboard\nAnalysts focus on REVIEW items.\nPASS/FAIL spot-checked for quality.\nEach REVIEW resolved as pass or fail."]
-        O2 --> O3["✅ Human Final Approval\nHuman SME has final sign-off.\nSystem assists — does not decide.\nAutomation of execution, not autonomy."]
+        O1["📋 Excel Report\nPASS / FAIL / REVIEW"]
+        O2["🖥️ SME Review Dashboard\nREVIEW items first"]
+        O3["✅ Human Final Approval"]
+        O1 --> O2 --> O3
     end
 ```
 
@@ -195,11 +202,11 @@ flowchart LR
 flowchart LR
     subgraph TECHNIQUES["AI Reasoning Techniques"]
         direction TB
-        T1["🔗 Chain of Thought (CoT)\nStep-by-step reasoning in prompts.\nUsed in: Extract, Map, Gap Analysis"]
-        T2["🌳 Tree of Thought (ToT)\nExplore multiple interpretations.\nUsed in: SME Fills Gaps\n(when PnP is ambiguous)"]
-        T3["🔄 Reflection\nAI self-reviews its own output.\nUsed in: AI Self-Review\n(max 3 iterations)"]
-        T4["🛠️ Tool Use\nAI selects and calls tools.\nUsed in: LLM Orchestrator\n(Phase B execution)"]
-        T5["📝 Few-Shot Learning\nPast corrections as examples.\nUsed in: AI Maps to Config\n(via Correction Store)"]
+        T1["🔗 Chain of Thought (CoT)\nStep-by-step reasoning\nUsed: Extract, Map, Gap Analysis"]
+        T3["🔄 Reflection\nAI self-reviews its output\nUsed: AI Self-Review (max 3)"]
+        T4["🛠️ Tool Use\nAI selects and calls tools\nUsed: LLM Orchestrator (Phase B)"]
+        T5["📝 Few-Shot Learning\nPast corrections as examples\nUsed: Map, Gap Analysis"]
+        T6["👤 Human-in-the-Loop\nDomain knowledge + decisions\nUsed: SME Review, Final Approval"]
     end
 ```
 
@@ -211,9 +218,9 @@ flowchart LR
 flowchart TB
     subgraph SAFEGUARDS["🔴 WORST-CASE SAFEGUARDS"]
         direction TB
-        S1["If AI Parsing Accuracy is Low\n→ Reflection loop, few-shot examples,\nstructured prompting, section-by-section parsing"]
-        S2["If Rule Coverage is Low\n→ Add new rule types anytime.\nEach new rule available to all QCs."]
-        S3["If Source Systems Are Complex\n→ Stage data into a data lake.\nAgents query staged data."]
-        S4["If Accuracy Needs Improve\n→ Reflection, few-shot, fine-tuning.\nEach added incrementally."]
+        S1["Low AI Parsing Accuracy\n→ Reflection, few-shot, fine-tuning"]
+        S2["Low Rule Coverage\n→ Add new rules anytime"]
+        S3["Complex Source Systems\n→ Stage data in data lake"]
+        S4["Accuracy Needs Improvement\n→ Incremental levers available"]
     end
 ```
