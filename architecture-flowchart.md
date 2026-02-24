@@ -64,9 +64,9 @@ flowchart TB
             A2 --> A3["🧩 AI Maps to Config\n━━━━━━━━━━\nSelects rule type,\ndata source, and fields\nfor each step.\nProduces draft config.\n━━━━━━━━━━\n🏷️ CoT + Few-Shot"]
         end
 
-        subgraph ROW2["Step 2: Gap Analysis"]
+        subgraph ROW2["Step 2: Gap Analysis & SME Collaborative Review"]
             direction LR
-            A4["🔍 AI Gap Analysis\n━━━━━━━━━━\nFlags missing/ambiguous items:\n• Missing tolerance/system\n• No fallback source\n• Implicit dependencies\n━━━━━━━━━━\nGenerates PnP Quality Score\n🏷️ CoT Prompting"] --> A5["👤 SME Fills Gaps\n━━━━━━━━━━\nProvides tribal knowledge,\nworkarounds, dependencies,\ntolerances, fallback sources.\nAI asks, SME answers.\n━━━━━━━━━━\n🏷️ ToT — Multiple Interpretations"]
+            A4["🔍 AI Gap Analysis\n━━━━━━━━━━\nCatches structural & logical gaps:\n• Missing data source/tolerance\n• Implicit dependencies\n• Ambiguous ordering\n━━━━━━━━━━\n⚠️ Catches ~30-40% of real gaps.\nDomain-specific gaps need SME.\n━━━━━━━━━━\nGenerates PnP Quality Score\n🏷️ CoT Prompting"] --> A5["🤝 SME Collaborative Review\n━━━━━━━━━━\nPart 1: Answer AI's questions\n(resolve identified gaps)\n━━━━━━━━━━\nPart 2: Add domain knowledge\nAI couldn't know to ask:\n• System migration exceptions\n• Regulatory changes\n• Data timing constraints\n• Business rule overrides\n━━━━━━━━━━\n🏷️ ToT — Multiple Interpretations\n🏷️ Domain Knowledge Capture"]
         end
 
         subgraph ROW3["Step 3: Reflect & Approve"]

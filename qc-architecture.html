@@ -246,22 +246,33 @@
                 <div class="card" style="border: 2px solid #e53935; max-width: 340px;">
                     <div class="card-icon">🔍</div>
                     <div class="card-title">AI Gap Analysis</div>
-                    <div class="card-desc">AI reviews the draft config against the PnP and flags what's <strong>missing or ambiguous</strong>:<br><br>
+                    <div class="card-desc">AI reviews the draft config and catches <strong>structural & logical gaps</strong>:<br><br>
                         <span style="font-size:11px;line-height:1.6;">
-                        • "Step 3 says 'verify amount is correct' but doesn't specify which system or tolerance"<br>
-                        • "No fallback source specified if System A is unavailable"<br>
-                        • "Steps 4-5 have an implicit dependency not stated in the PnP"<br>
+                        • Missing data source, field, or tolerance<br>
+                        • Implicit dependencies between steps<br>
+                        • Ambiguous ordering or edge cases<br>
                         </span>
-                        <span style="font-size:11px;color:#c62828;display:block;margin-top:6px;">Generates a <strong>PnP Quality Score</strong> — gives the org data on which PnPs need rewriting.</span>
+                        <span style="font-size:11px;color:#c62828;display:block;margin-top:6px;">⚠️ <strong>Limitation:</strong> AI catches ~30-40% of real gaps. Domain-specific gaps (system migrations, regulatory nuances, unwritten rules) require SME knowledge.</span>
+                        <span style="font-size:11px;color:#555;display:block;margin-top:4px;">Generates a <strong>PnP Quality Score</strong> — gives the org data on which PnPs need rewriting.</span>
                     </div>
                     <div style="margin-top:8px;"><span style="font-size:9px;background:#1565c0;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">CoT Prompting</span></div>
                 </div>
                 <div class="arrow-right">→</div>
-                <div class="card" style="border: 2px solid #e65100; max-width: 340px;">
-                    <div class="card-icon">👤</div>
-                    <div class="card-title">SME Fills Gaps</div>
-                    <div class="card-desc">SME provides the knowledge that's <strong>not in the PnP</strong> — tribal knowledge, workarounds, implicit dependencies, tolerances, fallback sources. This is a structured interview: AI asks, SME answers.<span style="font-size:11px;color:#e65100;display:block;margin-top:6px;">If a step has multiple possible meanings, AI presents options for SME to choose from.</span></div>
-                    <div style="margin-top:8px;"><span style="font-size:9px;background:#e65100;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">ToT — Multiple Interpretations</span></div>
+                <div class="card" style="border: 2px solid #e65100; max-width: 420px; background: #fff3e0;">
+                    <div class="card-icon">🤝</div>
+                    <div class="card-title">SME Collaborative Review</div>
+                    <div class="card-desc">
+                        <strong style="color:#e65100;">Part 1 — Answer AI’s Questions</strong><br>
+                        <span style="font-size:11px;">SME resolves the gaps AI identified — missing tolerances, data sources, dependencies. If a step has multiple meanings, AI presents options to choose from.</span><br><br>
+                        <strong style="color:#e65100;">Part 2 — Add Domain Knowledge</strong><br>
+                        <span style="font-size:11px;">SME proactively adds what AI <strong>couldn’t know to ask</strong>:<br>
+                        • "Migrated accounts use Legacy Table X, not TSYS"<br>
+                        • "RPC definition changed after 2023 regulatory update"<br>
+                        • "TSYS updates daily but Debt Manager updates weekly — only compare after Thursday"<br>
+                        • "Skip this check for accounts under $500"</span>
+                        <span style="font-size:11px;color:#e65100;display:block;margin-top:6px;">This is where the real domain intelligence enters the system. The config becomes smarter than the PnP.</span>
+                    </div>
+                    <div style="margin-top:8px;"><span style="font-size:9px;background:#e65100;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">ToT — Multiple Interpretations</span> <span style="font-size:9px;background:#c62828;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">Domain Knowledge Capture</span></div>
                 </div>
             </div>
 

@@ -76,22 +76,28 @@ The full architecture is available in two formats:
 - Produces a complete **draft config file**
 
 #### 3. AI Gap Analysis `[CoT Prompting]`
-- Reviews the draft config against the PnP and flags what's **missing or ambiguous**
-- Examples of gaps:
-  - *"Step 3 says 'verify amount is correct' but doesn't specify which system or tolerance"*
-  - *"No fallback source specified if System A is unavailable"*
-  - *"Steps 4-5 have an implicit dependency not stated in the PnP"*
+- Reviews the draft config and catches **structural & logical gaps**:
+  - Missing data source, field name, or tolerance
+  - Implicit dependencies between steps
+  - Ambiguous ordering or edge cases
+- **Important limitation**: AI catches ~30-40% of real gaps (structural/logical). Domain-specific gaps — system migrations, regulatory nuances, data timing constraints, unwritten business rules — can only come from the SME.
 - Generates a **PnP Quality Score** — gives the organization data on which PnPs need rewriting
 
-#### 4. SME Fills Gaps `[ToT — Multiple Interpretations]`
-- SME provides knowledge that's **not in the PnP**:
-  - Tribal knowledge
-  - Workarounds
-  - Implicit dependencies
-  - Tolerances and thresholds
-  - Fallback sources
-- This is a **structured interview**: AI asks, SME answers
+#### 4. SME Collaborative Review `[ToT — Multiple Interpretations] [Domain Knowledge Capture]`
+This is the most critical step in onboarding. The SME does two things:
+
+**Part 1 — Answer AI's Questions**
+- Resolve the gaps AI identified: missing tolerances, data sources, dependencies
 - If a step has multiple possible meanings, AI presents options for SME to choose from (Tree of Thought)
+
+**Part 2 — Add Domain Knowledge (AI couldn't know to ask)**
+- System migration exceptions: *"Migrated accounts use Legacy Table X, not TSYS"*
+- Regulatory changes: *"RPC definition changed after 2023 regulatory update — PnP hasn't been updated"*
+- Data timing constraints: *"TSYS updates daily but Debt Manager updates weekly — only compare after Thursday"*
+- Business rule overrides: *"Skip this check for accounts under $500"*
+- Unwritten workarounds: *"For accounts opened before 2019, use System B instead of System A"*
+
+This is where the **real domain intelligence** enters the system. The config becomes smarter than the PnP — it captures knowledge that no document contains. All domain knowledge captured here is stored in the Correction Store for future QC onboardings.
 
 #### 5. AI Self-Review (Reflection) `[Reflection Pattern] [Max 3 Iterations]`
 - Reviews the **gap-filled** config
