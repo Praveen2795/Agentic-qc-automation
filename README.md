@@ -96,12 +96,12 @@ The Gap Analysis agent finds gaps using **two distinct strategies**:
 
 - Generates a **PnP Quality Score** — gives the organization data on which PnPs need rewriting
 
-#### 4. SME Collaborative Review `[ToT — Multiple Interpretations] [Domain Knowledge Capture]`
-This is the most critical step in onboarding. The SME does two things:
+#### 4. SME Collaborative Review `[Human-in-the-Loop] [Domain Knowledge Capture]`
+This is the most critical step in onboarding. The SME does three things:
 
 **Part 1 — Answer AI's Questions (Detected Gaps)**
 - Resolve the gaps AI identified in this PnP: missing tolerances, data sources, dependencies
-- If a step has multiple possible meanings, AI presents options for SME to choose from (Tree of Thought)
+- If a step has multiple possible meanings, AI presents options for SME to choose from
 
 **Part 2 — Confirm/Reject AI Predictions (Predicted Gaps)**
 - Review gaps the AI predicted based on similar past QCs from the Correction Store
@@ -274,7 +274,7 @@ Scales from few-shot → RAG retrieval → fine-tuning as the library grows.
 | Technique | What It Does | Where Used |
 |-----------|-------------|------------|
 | **Chain of Thought (CoT)** | Forces step-by-step reasoning in prompts | AI Extracts Steps, AI Maps to Config, AI Gap Analysis, LLM Orchestrator |
-| **Tree of Thought (ToT)** | Explores multiple interpretations of ambiguous text | SME Fills Gaps (presents options when PnP is unclear) |
+| **Human-in-the-Loop** | Human provides domain knowledge, confirms/rejects AI predictions, resolves ambiguity | SME Collaborative Review (Phase A), SME Final Approval, Human Final Approval (Output) |
 | **Reflection** | AI self-reviews its own output, catches errors | AI Self-Review (max 3 iterations) |
 | **Tool Use** | AI selects and calls appropriate tools at runtime | LLM Orchestrator (Phase B — calls connectors and rules) |
 | **Few-Shot Learning** | Past corrections as in-context examples | AI Maps to Config, **AI Gap Analysis** (via Correction Store) |
