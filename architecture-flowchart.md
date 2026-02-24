@@ -66,7 +66,7 @@ flowchart TB
 
         subgraph ROW2["Step 2: Gap Analysis & SME Collaborative Review"]
             direction LR
-            A4["🔍 AI Gap Analysis\n━━━━━━━━━━\nCatches structural & logical gaps:\n• Missing data source/tolerance\n• Implicit dependencies\n• Ambiguous ordering\n━━━━━━━━━━\n⚠️ Catches ~30-40% of real gaps.\nDomain-specific gaps need SME.\n━━━━━━━━━━\nGenerates PnP Quality Score\n🏷️ CoT Prompting"] --> A5["🤝 SME Collaborative Review\n━━━━━━━━━━\nPart 1: Answer AI's questions\n(resolve identified gaps)\n━━━━━━━━━━\nPart 2: Add domain knowledge\nAI couldn't know to ask:\n• System migration exceptions\n• Regulatory changes\n• Data timing constraints\n• Business rule overrides\n━━━━━━━━━━\n🏷️ ToT — Multiple Interpretations\n🏷️ Domain Knowledge Capture"]
+            A4["🔍 AI Gap Analysis\n━━━━━━━━━━\nCategory 1: Detected in This PnP\n• Missing data source/tolerance\n• Implicit dependencies\n• Ambiguous ordering\n━━━━━━━━━━\nCategory 2: Predicted from Similar QCs\n(via Correction Store retrieval)\n• Patterns from past onboardings\n• Common gaps by BU / rule type\n━━━━━━━━━━\n📈 Improves with every QC onboarded\nGenerates PnP Quality Score\n🏷️ CoT + Few-Shot from Correction Store"] --> A5["🤝 SME Collaborative Review\n━━━━━━━━━━\nPart 1: Answer AI's questions\n(resolve identified gaps)\n\nPart 2: Confirm/reject AI predictions\n(from similar QCs)\n━━━━━━━━━━\nPart 3: Add domain knowledge\nAI couldn't know to ask:\n• System migration exceptions\n• Regulatory changes\n• Data timing constraints\n• Business rule overrides\n━━━━━━━━━━\n🏷️ ToT — Multiple Interpretations\n🏷️ Domain Knowledge Capture"]
         end
 
         subgraph ROW3["Step 3: Reflect & Approve"]
@@ -87,6 +87,7 @@ flowchart TB
 
         A7 --> C1
         C3 -.->|"Fed back into next onboarding"| A2
+        C3 -.->|"Past gap-fills predict new gaps"| A4
 
         subgraph NEWRULE["If Unknown Check Type Found"]
             direction LR

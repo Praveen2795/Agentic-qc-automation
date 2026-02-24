@@ -75,22 +75,39 @@ The full architecture is available in two formats:
 - Past corrections from the Correction Store guide the mapping
 - Produces a complete **draft config file**
 
-#### 3. AI Gap Analysis `[CoT Prompting]`
+#### 3. AI Gap Analysis `[CoT Prompting] [Few-Shot from Correction Store]`
+The Gap Analysis agent finds gaps using **two distinct strategies**:
+
+**Category 1 — Detected in This PnP (CoT reasoning)**
 - Reviews the draft config and catches **structural & logical gaps**:
   - Missing data source, field name, or tolerance
   - Implicit dependencies between steps
   - Ambiguous ordering or edge cases
-- **Important limitation**: AI catches ~30-40% of real gaps (structural/logical). Domain-specific gaps — system migrations, regulatory nuances, data timing constraints, unwritten business rules — can only come from the SME.
+
+**Category 2 — Predicted from Similar QCs (Correction Store retrieval)**
+- Retrieves past completed QC configs from the **Correction Store** — focusing on QCs with similar business units, rule types, or source systems
+- Surfaces patterns the AI learned from previous onboardings:
+  - *"3 previous QCs using TSYS + Debt Manager required a Thursday-only comparison rule — does this apply here?"*
+  - *"Collections QCs in this BU always needed a balance threshold exception under $500"*
+  - *"Last 2 QCs in this business unit referenced Legacy Table X for migrated accounts"*
+- These are presented as **"Predicted gaps based on similar QCs"** — clearly separated from detected gaps — so the SME can confirm or reject each one
+
+**Why this matters**: Early on (QC #1-5), the AI only catches ~30-40% of gaps (structural/logical). But as the Correction Store grows, the AI starts **anticipating domain-specific gaps** it learned from past SME sessions. By QC #50+, gap detection improves dramatically because the system has seen patterns across dozens of onboardings.
+
 - Generates a **PnP Quality Score** — gives the organization data on which PnPs need rewriting
 
 #### 4. SME Collaborative Review `[ToT — Multiple Interpretations] [Domain Knowledge Capture]`
 This is the most critical step in onboarding. The SME does two things:
 
-**Part 1 — Answer AI's Questions**
-- Resolve the gaps AI identified: missing tolerances, data sources, dependencies
+**Part 1 — Answer AI's Questions (Detected Gaps)**
+- Resolve the gaps AI identified in this PnP: missing tolerances, data sources, dependencies
 - If a step has multiple possible meanings, AI presents options for SME to choose from (Tree of Thought)
 
-**Part 2 — Add Domain Knowledge (AI couldn't know to ask)**
+**Part 2 — Confirm/Reject AI Predictions (Predicted Gaps)**
+- Review gaps the AI predicted based on similar past QCs from the Correction Store
+- Confirm ones that apply, reject ones that don't — both responses further train the system
+
+**Part 3 — Add Domain Knowledge (AI couldn't know to ask)**
 - System migration exceptions: *"Migrated accounts use Legacy Table X, not TSYS"*
 - Regulatory changes: *"RPC definition changed after 2023 regulatory update — PnP hasn't been updated"*
 - Data timing constraints: *"TSYS updates daily but Debt Manager updates weekly — only compare after Thursday"*
@@ -127,12 +144,19 @@ When the SME adjusts the AI output, the system captures:
 | **Gap-fills** | Knowledge not in the PnP that the SME provided |
 | **Metadata** | QC name, business unit, rule type, date |
 
-These are stored in the **Correction Store** (long-term memory). The next QC onboarding pulls relevant past corrections as few-shot examples, making the AI more accurate over time.
+These are stored in the **Correction Store** (long-term memory). The next QC onboarding pulls relevant past corrections as few-shot examples into **three** downstream steps:
+
+| Feed-Forward Target | What It Gets | Impact |
+|---|---|---|
+| **AI Extracts Steps** | Past corrections improve parsing accuracy | Fewer extraction errors over time |
+| **AI Gap Analysis** | Past gap-fills predict gaps in new QCs | AI anticipates domain-specific gaps |
+| **Phase B Execution** | Past patterns improve orchestration | Better tool selection and edge case handling |
 
 **Scaling path**:
-- **Early (QC #1-50)**: Few-shot examples in prompt
-- **Growth (QC #50+)**: RAG retrieval for relevance-based example selection
-- **Scale (QC #200+)**: Fine-tuning if needed
+- **Early (QC #1-10)**: Few-shot — attach 2-3 similar completed configs as examples
+- **Growth (QC #10-50)**: RAG — semantic search over all past gaps by business unit, rule type, source systems
+- **Scale (QC #50+)**: The model has seen enough patterns that gap detection becomes genuinely predictive
+- **Late (QC #200+)**: Fine-tuning if needed
 
 ### New Rule Type Discovery
 
@@ -237,8 +261,11 @@ Persistent long-term memory that stores:
 - SME corrections from every onboarding
 - Gap-fills (knowledge not in the PnP)
 - Common defaults learned over time
+- **Confirmed/rejected gap predictions** (further refines future predictions)
 
-Fed back as few-shot examples during the next QC onboarding to improve AI accuracy. Scales from few-shot → RAG retrieval → fine-tuning as the library grows.
+Fed back into **three** steps: Extract, Gap Analysis, and Phase B Execution. The Gap Analysis feed-forward is the most impactful — it transforms the agent from "find what's logically missing in THIS PnP" → "predict what's USUALLY missing in PnPs LIKE this, based on every QC we've ever onboarded."
+
+Scales from few-shot → RAG retrieval → fine-tuning as the library grows.
 
 ---
 
@@ -250,7 +277,7 @@ Fed back as few-shot examples during the next QC onboarding to improve AI accura
 | **Tree of Thought (ToT)** | Explores multiple interpretations of ambiguous text | SME Fills Gaps (presents options when PnP is unclear) |
 | **Reflection** | AI self-reviews its own output, catches errors | AI Self-Review (max 3 iterations) |
 | **Tool Use** | AI selects and calls appropriate tools at runtime | LLM Orchestrator (Phase B — calls connectors and rules) |
-| **Few-Shot Learning** | Past corrections as in-context examples | AI Maps to Config (via Correction Store) |
+| **Few-Shot Learning** | Past corrections as in-context examples | AI Maps to Config, **AI Gap Analysis** (via Correction Store) |
 
 ---
 

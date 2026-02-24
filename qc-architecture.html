@@ -243,19 +243,29 @@
 
             <!-- Row 2: Gap Analysis -->
             <div class="flow-row">
-                <div class="card" style="border: 2px solid #e53935; max-width: 340px;">
+                <div class="card" style="border: 2px solid #e53935; max-width: 400px;">
                     <div class="card-icon">🔍</div>
                     <div class="card-title">AI Gap Analysis</div>
-                    <div class="card-desc">AI reviews the draft config and catches <strong>structural & logical gaps</strong>:<br><br>
+                    <div class="card-desc">
+                        <strong style="color:#1565c0;">Category 1 — Detected in This PnP</strong><br>
                         <span style="font-size:11px;line-height:1.6;">
+                        AI reviews the draft config with CoT reasoning:<br>
                         • Missing data source, field, or tolerance<br>
                         • Implicit dependencies between steps<br>
                         • Ambiguous ordering or edge cases<br>
                         </span>
-                        <span style="font-size:11px;color:#c62828;display:block;margin-top:6px;">⚠️ <strong>Limitation:</strong> AI catches ~30-40% of real gaps. Domain-specific gaps (system migrations, regulatory nuances, unwritten rules) require SME knowledge.</span>
+                        <br>
+                        <strong style="color:#2e7d32;">Category 2 — Predicted from Similar QCs</strong><br>
+                        <span style="font-size:11px;line-height:1.6;">
+                        AI retrieves past QC configs from the <strong>Correction Store</strong> and predicts gaps this PnP probably has:<br>
+                        • <em>"3 previous QCs using TSYS+Debt Manager needed a Thursday-only rule — does this one?"</em><br>
+                        • <em>"Collections QCs in this BU always needed a $500 threshold exception"</em><br>
+                        • <em>"Last 2 QCs referenced Legacy Table X for migrated accounts"</em><br>
+                        </span>
+                        <span style="font-size:11px;color:#2e7d32;display:block;margin-top:6px;">📈 Gap detection improves with every QC onboarded. Early: ~30-40% catch rate. By QC #50+: AI anticipates domain-specific gaps from patterns across all past QCs.</span>
                         <span style="font-size:11px;color:#555;display:block;margin-top:4px;">Generates a <strong>PnP Quality Score</strong> — gives the org data on which PnPs need rewriting.</span>
                     </div>
-                    <div style="margin-top:8px;"><span style="font-size:9px;background:#1565c0;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">CoT Prompting</span></div>
+                    <div style="margin-top:8px;"><span style="font-size:9px;background:#1565c0;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">CoT Prompting</span> <span style="font-size:9px;background:#2e7d32;color:#fff;padding:2px 8px;border-radius:8px;letter-spacing:0.5px;">Few-Shot from Correction Store</span></div>
                 </div>
                 <div class="arrow-right">→</div>
                 <div class="card" style="border: 2px solid #e65100; max-width: 420px; background: #fff3e0;">
@@ -263,8 +273,10 @@
                     <div class="card-title">SME Collaborative Review</div>
                     <div class="card-desc">
                         <strong style="color:#e65100;">Part 1 — Answer AI’s Questions</strong><br>
-                        <span style="font-size:11px;">SME resolves the gaps AI identified — missing tolerances, data sources, dependencies. If a step has multiple meanings, AI presents options to choose from.</span><br><br>
-                        <strong style="color:#e65100;">Part 2 — Add Domain Knowledge</strong><br>
+                        <span style="font-size:11px;">SME resolves gaps AI detected in this PnP — missing tolerances, data sources, dependencies. If a step has multiple meanings, AI presents options to choose from.</span><br><br>
+                        <strong style="color:#e65100;">Part 2 — Confirm/Reject AI Predictions</strong><br>
+                        <span style="font-size:11px;">Review gaps the AI <strong>predicted</strong> based on similar past QCs. Confirm ones that apply, reject ones that don't — both responses further train the system.</span><br><br>
+                        <strong style="color:#e65100;">Part 3 — Add Domain Knowledge</strong><br>
                         <span style="font-size:11px;">SME proactively adds what AI <strong>couldn’t know to ask</strong>:<br>
                         • "Migrated accounts use Legacy Table X, not TSYS"<br>
                         • "RPC definition changed after 2023 regulatory update"<br>
@@ -318,10 +330,16 @@
                     <div class="card-desc">Long-term memory. Stores corrections <strong>and</strong> gap-fills: PnP snippet → AI output → SME-corrected output. Also stores common defaults (e.g., "tolerance for dollar amounts is usually $0.01").</div>
                 </div>
                 <div class="arrow-right">→</div>
-                <div class="card" style="border: 2px solid #4caf50; max-width: 280px;">
+                <div class="card" style="border: 2px solid #4caf50; max-width: 320px;">
                     <div class="card-icon">🎯</div>
                     <div class="card-title">AI Gets Smarter Over Time</div>
-                    <div class="card-desc">Next onboarding pulls relevant past corrections as few-shot examples. By QC #50, the AI has a rich library from your organization. <span style="font-size:11px;color:#2e7d32;display:block;margin-top:6px;">Scales: few-shot → RAG retrieval → fine-tuning as the library grows.</span></div>
+                    <div class="card-desc">Next onboarding pulls relevant past corrections as few-shot examples into <strong>three</strong> steps:<br><br>
+                    <span style="font-size:11px;">
+                    <strong>① Extract & Map</strong> — past corrections improve parsing accuracy<br>
+                    <strong>② Gap Analysis</strong> — past gap-fills predict gaps in new QCs<br>
+                    <strong>③ Phase B</strong> — past patterns improve execution<br>
+                    </span>
+                    <span style="font-size:11px;color:#2e7d32;display:block;margin-top:6px;">Scales: few-shot → RAG retrieval → fine-tuning as the library grows.</span></div>
                 </div>
             </div>
 
