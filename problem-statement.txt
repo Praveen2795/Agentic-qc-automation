@@ -365,6 +365,16 @@ attempting to automate the judgment itself.
   this: either stage/cache data before QC runs, batch requests during
   off-peak hours, or use read replicas. This is a non-negotiable
   constraint — the automation cannot become a threat to system stability.
+- AUTHENTICATION AND DATA ACCESS MUST BE CENTRALIZED. Agents should NOT
+  hold credentials or connect directly to source systems. There must be
+  a centralized data layer that handles all authentication, authorization,
+  and data retrieval. Agents request data from this layer based on their
+  assigned roles/permissions — they never touch source systems directly.
+  This ensures: (1) credential management is in one place, not scattered
+  across agents, (2) access control is enforced consistently (an agent
+  running a collections QC should not be able to query fraud systems),
+  (3) all data access is logged and auditable through a single gateway,
+  (4) adding or rotating credentials doesn't require changing agent code.
 
 10.3 ORGANIZATIONAL
 - SME time is limited — they have to do their regular QC work too
