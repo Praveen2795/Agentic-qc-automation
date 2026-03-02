@@ -344,6 +344,12 @@ attempting to automate the judgment itself.
 - No automated production actions (no closing QCs, no updating records)
 - Human sign-off required on all results
 - Must be at least as accurate as the manual process
+- THIS PROJECT HAS HIGH VISIBILITY FROM A RISK PERSPECTIVE. QC is a
+  compliance function — errors in QC can lead to regulatory findings,
+  fines, and reputational damage. Accuracy is not optional. The system
+  must be demonstrably reliable before being trusted with production QCs.
+  Any automated result that is wrong is worse than a manual result that
+  is slow — because it creates a false sense of compliance.
 
 10.2 TECHNICAL
 - 15-20 source systems with varying access methods
