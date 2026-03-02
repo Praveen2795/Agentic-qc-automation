@@ -357,6 +357,14 @@ attempting to automate the judgment itself.
 - Data may need to be staged in a data lake before querying
 - LLM accuracy against real PnP documents is unknown until tested
 - System availability and latency vary across source systems
+- THE AUTOMATION MUST NOT OVERLOAD PRODUCTION SYSTEMS. When running QC
+  across hundreds of accounts, the system will make thousands of data
+  requests. Hitting production databases or APIs directly — especially
+  repeatedly or in parallel — risks degrading or bringing down critical
+  bank systems that serve live customers. The design must account for
+  this: either stage/cache data before QC runs, batch requests during
+  off-peak hours, or use read replicas. This is a non-negotiable
+  constraint — the automation cannot become a threat to system stability.
 
 10.3 ORGANIZATIONAL
 - SME time is limited — they have to do their regular QC work too
