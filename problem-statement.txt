@@ -560,6 +560,19 @@ progressively reduce SME time per QC as it accumulates knowledge.
 - 300+ total QCs means multi-year rollout even at 30-40/quarter
 - The system must get better over time, not stay static
 - Adding a new QC should ideally require zero code changes — just configuration
+- NO BESPOKE AGENTS. PERIOD.
+  The system CANNOT have a custom-built agent, pipeline, or workflow
+  for each QC. With 300+ QCs, that means 300+ things to build, test,
+  maintain, debug, and update — every time a regulation changes, every
+  time a source system migrates, every time a PnP is revised. It is
+  unmaintainable at scale. The entire point of the architecture is ONE
+  generic, configurable system that can handle ANY QC by reading its PnP
+  and producing a configuration. The same engine, the same agent logic,
+  the same execution pipeline — driven by different configurations, not
+  different code. If the design drifts toward "let's build a special
+  agent for credit card QCs and another for collections QCs and another
+  for fraud QCs," it has failed. The differences between QCs must live
+  in DATA (configurations, rules, connector mappings) — never in CODE.
 - WHAT MAKES THIS AGENTIC (NOT JUST AUTOMATION):
   The system must be able to read a new PnP document it has never seen,
   understand the validation steps, map them to existing rules, identify
@@ -607,6 +620,9 @@ progressively reduce SME time per QC as it accumulates knowledge.
 - This is NOT a system that takes production actions (close accounts, etc.)
 - This is NOT a chatbot or conversational interface
 - This is NOT a rules engine that someone manually programs rule by rule
+- This is NOT 300+ bespoke agents — it is ONE configurable system that
+  handles any QC through configuration, not custom code. The differences
+  between QCs live in data (configs, rules, mappings), never in code.
 - This is an automation system that executes the checks and surfaces results
   for human review — automation of execution, not automation of judgment
 
