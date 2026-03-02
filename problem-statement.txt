@@ -1,0 +1,402 @@
+================================================================================
+AGENTIC QC AUTOMATION — PROBLEM STATEMENT & CONTEXT
+================================================================================
+
+This document describes the problem space, constraints, edge cases, and domain
+context for automating Quality Control (QC) processes at a large financial
+institution. It is intended to be given as context to an AI agent or developer
+who needs to understand the problem deeply before designing or building anything.
+
+NO SOLUTION DESIGN IS INCLUDED. This is purely problem + constraints.
+
+================================================================================
+1. WHAT IS QC?
+================================================================================
+
+Quality Control (QC) at this financial institution is the process of verifying
+that business operations (loan servicing, collections, fraud detection, credit
+card management, recovery, etc.) were executed correctly — in compliance with
+internal policy, regulatory requirements, and business rules.
+
+Each QC process has a corresponding Policy & Procedure (PnP) document that
+defines:
+- What to check (the validation steps)
+- Which systems to pull data from
+- What constitutes a pass vs. fail
+- What tolerances or thresholds apply
+- What timelines are acceptable
+
+QC is performed on a sample of accounts each month. For each account in the
+sample, the QC analyst executes every validation step defined in the PnP and
+records the result (pass/fail) with evidence in an Excel report.
+
+================================================================================
+2. SCALE OF THE PROBLEM
+================================================================================
+
+- 300+ distinct QC processes across the organization
+- Spanning multiple business units: credit cards, collections, fraud, recovery,
+  loan servicing, and others
+- Each QC process has its own PnP document
+- QC is performed monthly (some quarterly)
+- Each monthly QC run covers a sample of accounts (sample sizes vary)
+- Each account in the sample requires checking against multiple validation steps
+  (anywhere from 5 to 50+ steps per QC)
+- Results are compiled into structured Excel reports for review and sign-off
+
+================================================================================
+3. HOW QC IS DONE TODAY (MANUAL PROCESS)
+================================================================================
+
+Today, QC analysts manually execute each check:
+
+1. Read the PnP document to understand the validation steps
+2. Pull data from source systems (TSYS, Debt Manager, Imaging systems,
+   internal databases, etc.)
+3. Cross-reference values across systems (e.g., compare a balance in TSYS
+   against a balance in Debt Manager)
+4. Apply business rules (e.g., "if the account was opened before 2019, use
+   System B instead of System A")
+5. Check timelines (e.g., "was this action taken within 30 days of the event?")
+6. Verify document existence (e.g., "is there a Right Party Contact letter
+   on file in the imaging system?")
+7. Read and interpret free-text agent notes (e.g., "did the agent document
+   the customer's reason for dispute?")
+8. Record each check as pass/fail in an Excel spreadsheet
+9. Submit the completed report for supervisory review and sign-off
+
+This is done every month, for every QC, for every account in the sample.
+
+================================================================================
+4. WHY THIS IS A PROBLEM
+================================================================================
+
+4.1 SLOW
+- Each QC takes significant analyst time every month
+- Analysts must navigate multiple systems, often with different interfaces
+- Multi-hop lookups are common: to check one thing, you may need to look up
+  an account number in System A, use that to find a case ID in System B,
+  then use the case ID to find a document in System C
+
+4.2 ERROR-PRONE
+- Manual cross-referencing across 15-20 source systems
+- Copy-paste errors between systems and spreadsheets
+- Fatigue errors on repetitive checks across large samples
+- Inconsistent interpretation of ambiguous PnP language
+
+4.3 NOT SCALABLE
+- Adding a new QC requires training analysts on a new PnP
+- Institutional knowledge lives in people's heads, not in systems
+- When an analyst leaves, their tribal knowledge goes with them
+- Onboarding a new analyst to a complex QC takes weeks
+
+4.4 INCONSISTENT
+- Different analysts may interpret the same PnP step differently
+- "Verify the amount is correct" — correct compared to what? Which system?
+  What tolerance? The PnP often doesn't specify.
+- Subjective checks (like reading agent notes) vary by analyst judgment
+
+4.5 AUDIT RISK
+- Regulators expect consistent, documented, repeatable QC processes
+- Manual processes are harder to audit — the "how" lives in people's heads
+- Any inconsistency in execution can become a regulatory finding
+
+================================================================================
+5. SOURCE SYSTEMS
+================================================================================
+
+QC processes pull data from approximately 15-20 internal systems. Examples:
+
+- TSYS: Card processing system (balances, transactions, account status)
+- Debt Manager: Collections management (payment plans, account assignments)
+- Imaging System: Document storage (letters, notices, correspondence)
+- Internal databases: Various operational databases
+- Other systems specific to business units
+
+Key characteristics of these systems:
+- Each has its own API, interface, or database access method
+- Data formats and field names are inconsistent across systems
+- Some systems update in real-time, others batch (e.g., TSYS updates daily,
+  Debt Manager updates weekly)
+- Multi-hop lookups are common (account → case → document)
+- Some systems may be legacy with limited API access
+- System migrations happen — accounts that were in one system may have been
+  migrated to another, and the PnP may not reflect this
+
+================================================================================
+6. PnP DOCUMENTS — THE SOURCE OF TRUTH (AND ITS PROBLEMS)
+================================================================================
+
+PnP (Policy & Procedure) documents are the official instructions for each QC.
+They are written by compliance/policy teams and are supposed to tell the QC
+analyst exactly what to do.
+
+6.1 FORMAT VARIATION
+- Some PnPs are well-structured: numbered steps, clear fields, specific systems
+- Some are narrative paragraphs: "The analyst should verify that the balance
+  is consistent with the expected recovery amount"
+- Some are scanned PDFs (OCR may be needed)
+- Some mix all of these formats within a single document
+- Length ranges from 2 pages to 30+ pages
+
+6.2 PnP DOCUMENTS HAVE GAPS
+This is a critical problem. PnPs are often incomplete or ambiguous:
+
+STRUCTURAL GAPS (what's literally missing from the document):
+- Missing data source: "Verify the balance is correct" — from which system?
+- Missing field names: "Check the payment date" — which field exactly?
+- Missing tolerances: "Amounts should match" — exactly, or within $0.01?
+  Within $1.00? Within 1%?
+- Missing fallback sources: "If System A is unavailable" — then what?
+
+LOGICAL GAPS (what doesn't make sense):
+- Implicit dependencies between steps not stated in the PnP
+  (e.g., Step 5 requires the result of Step 3, but this isn't mentioned)
+- Ambiguous ordering: does step order matter? Can some be done in parallel?
+- Edge cases not addressed: what happens if an account has no transactions?
+  If a field is null? If the account was closed mid-period?
+
+DOMAIN-SPECIFIC GAPS (knowledge that exists only in people's heads):
+- System migration exceptions: "Migrated accounts use Legacy Table X, not TSYS"
+- Regulatory changes: "The RPC (Right Party Contact) definition changed after
+  the 2023 regulatory update, but the PnP hasn't been updated yet"
+- Data timing constraints: "TSYS updates daily but Debt Manager updates weekly
+  — you can only reliably compare them after Thursday"
+- Business rule overrides: "Skip this check for accounts under $500"
+- Unwritten workarounds: "For accounts opened before 2019, use System B
+  instead of System A"
+- Seasonal exceptions: "During Q4, the tolerance is relaxed to $5.00 because
+  of year-end adjustments"
+
+POLITICAL/ORGANIZATIONAL GAPS (knowledge the AI can never surface):
+- Undocumented process changes that were approved verbally but never
+  written into the PnP
+- Intentional ambiguity left in PnPs for political reasons
+- Processes that technically violate the PnP but are accepted practice
+- Disagreements between business units about the correct procedure
+
+The implication: you CANNOT fully automate QC by just reading the PnP.
+The PnP is necessary but not sufficient. A significant portion of the
+knowledge required to execute QC correctly lives in the heads of experienced
+analysts (SMEs — Subject Matter Experts).
+
+================================================================================
+7. TYPES OF VALIDATION CHECKS
+================================================================================
+
+Based on analysis of QC processes, most validation steps fall into a finite
+set of check types. Estimated 8-10 types cover the majority:
+
+7.1 CROSS-MATCH NUMERIC
+Compare a numeric value from System A against System B.
+- Example: "Balance in TSYS should match balance in Debt Manager"
+- Edge cases: tolerances ($0.01? $1.00?), null values, currency conversion,
+  negative amounts, zero-balance accounts
+
+7.2 CROSS-MATCH DATE
+Compare dates from two systems.
+- Example: "Account open date in System A should match System B"
+- Edge cases: timezone differences, date format mismatches (MM/DD vs DD/MM),
+  business days vs calendar days, null dates
+
+7.3 CROSS-MATCH STRING
+Compare text values from two systems.
+- Example: "Customer name in System A should match System B"
+- Edge cases: nickname variations, middle name inclusion, case sensitivity,
+  special characters, truncation in one system, encoding differences
+
+7.4 THRESHOLD CHECK
+Verify a value is above or below a limit.
+- Example: "Account balance should not exceed $50,000"
+- Edge cases: boundary values (exactly equal?), dynamic thresholds that
+  change based on account type or business unit
+
+7.5 TIMELINE CHECK
+Verify an action was taken within N days of an event.
+- Example: "First collection attempt must be within 30 days of delinquency"
+- Edge cases: business days vs calendar days, holidays, weekends,
+  what counts as "day 1"?, accounts that span month boundaries
+
+7.6 DOCUMENT EXISTS
+Verify a specific document is on file.
+- Example: "Right Party Contact letter must be in the imaging system"
+- Edge cases: multiple versions of the document, documents filed under
+  wrong account, OCR quality of scanned documents, document naming
+  conventions varying by time period
+
+7.7 CONDITIONAL CHECK
+If condition X is true, then Y must also be true.
+- Example: "If account is in collections, a payment plan must be on file"
+- Edge cases: nested conditions, conditions that depend on data from
+  multiple systems, conditions based on historical state (what was true
+  at the time of the event, not what's true now)
+
+7.8 LIST CONTAINS
+Verify a value is in an allowed set.
+- Example: "Account status must be one of: Active, Suspended, Under Review"
+- Edge cases: status codes that differ between systems, deprecated status
+  codes still in old accounts, case sensitivity
+
+7.9 NOTE ANALYSIS (FREE-TEXT)
+Read and interpret free-text agent notes to determine if specific actions
+were documented.
+- Example: "Agent notes must document the customer's reason for dispute"
+- This is fundamentally different from the other check types:
+  - Cannot be validated deterministically
+  - Requires natural language understanding
+  - Highly subjective — different analysts may disagree
+  - Agent notes vary wildly in quality, length, and format
+  - Abbreviations, shorthand, and jargon are common
+  - Notes from different time periods may use different terminology
+  - A single note field may contain entries from multiple agents over time
+
+================================================================================
+8. EDGE CASES AND COMPLICATIONS
+================================================================================
+
+8.1 MULTI-HOP DATA LOOKUPS
+Many checks require chaining across systems:
+- Look up account number → get case ID → get document reference → verify
+  document exists in imaging system
+- If any hop fails (system unavailable, ID not found, data mismatch), the
+  entire check cannot be completed
+
+8.2 TEMPORAL DEPENDENCIES
+- Some data is only valid at certain times (weekly batch systems)
+- Historical state matters: "Was the account in good standing AT THE TIME
+  the decision was made?" — not whether it is now
+- Retroactive adjustments: data may change after the fact
+
+8.3 ACCOUNT LIFECYCLE EDGE CASES
+- Accounts that were opened, closed, and reopened
+- Accounts that migrated between systems mid-lifecycle
+- Accounts involved in mergers or acquisitions
+- Joint accounts vs individual accounts
+- Deceased account holders
+- Accounts under legal hold or litigation
+
+8.4 REGULATORY VARIATION
+- Different QCs may be governed by different regulations
+- Regulations change over time, but PnPs may lag behind
+- State-level vs federal regulations may conflict
+- Some checks apply only to specific account types or geographies
+
+8.5 SAMPLE SELECTION
+- Not all accounts are checked — only a sample
+- Sample selection methods vary by QC (random, risk-based, stratified)
+- The automation system needs to handle whatever accounts are in the sample
+- Some accounts in the sample may be unusual edge cases
+
+8.6 QC INTERDEPENDENCIES
+- Some QC processes overlap — the same account may be checked by multiple QCs
+- Results from one QC may affect the interpretation of another
+- Some QCs share common sub-checks
+
+8.7 HUMAN JUDGMENT AREAS
+Certain checks inherently require human judgment and cannot be fully automated:
+- Interpreting ambiguous agent notes
+- Determining "reasonableness" of an action
+- Evaluating whether an exception was justified
+- Assessing the adequacy of documentation
+These areas need a mechanism to surface them for human review rather than
+attempting to automate the judgment itself.
+
+================================================================================
+9. STAKEHOLDERS AND THEIR CONCERNS
+================================================================================
+
+9.1 QC ANALYSTS (SMEs)
+- Primary users of the current manual process
+- Hold tribal knowledge about system quirks and PnP gaps
+- Concern: will this replace their jobs?
+- Need: tools that reduce tedious work, not tools that bypass them
+- They are the essential source of domain knowledge during onboarding
+
+9.2 QC MANAGERS / SUPERVISORS
+- Review and sign off on QC results
+- Need: consistent, auditable results they can trust
+- Concern: accountability — who is responsible if automation makes an error?
+
+9.3 COMPLIANCE / RISK
+- Need: full audit trail of every check performed
+- Need: evidence that the same process is followed every time
+- Concern: regulatory defensibility — can we explain to a regulator
+  exactly how each check was performed?
+
+9.4 CDO / EXECUTIVE LEADERSHIP
+- Need: scalability (300+ QCs), efficiency, cost reduction
+- Need: de-risked approach (experimentation before full build)
+- Concern: timeline, cost, and whether it actually works
+- Concern: how does this compare to just hiring more analysts?
+
+9.5 ENGINEERING / TECHNOLOGY
+- Will build and maintain the system
+- Need: clear requirements, extensible architecture
+- Concern: integration with legacy systems, data access, LLM reliability
+
+================================================================================
+10. CONSTRAINTS
+================================================================================
+
+10.1 REGULATORY / COMPLIANCE
+- Full audit trail required for every automated check
+- Results must be explainable — "the AI said so" is not acceptable
+- No automated production actions (no closing QCs, no updating records)
+- Human sign-off required on all results
+- Must be at least as accurate as the manual process
+
+10.2 TECHNICAL
+- 15-20 source systems with varying access methods
+- Some systems are legacy with limited or no API access
+- Data may need to be staged in a data lake before querying
+- LLM accuracy against real PnP documents is unknown until tested
+- System availability and latency vary across source systems
+
+10.3 ORGANIZATIONAL
+- SME time is limited — they have to do their regular QC work too
+- PnP documents are owned by compliance/policy teams, not QC teams
+- Getting PnPs updated is a slow process (months)
+- Different business units may have different priorities and timelines
+- Change management — analysts need to trust the system before relying on it
+
+10.4 SCALE
+- Target: onboard 30-40 QCs per quarter once the system is production-ready
+- 300+ total QCs means multi-year rollout
+- The system must get better over time, not stay static
+- Adding a new QC should ideally require zero code changes — just configuration
+
+10.5 DATA SENSITIVITY
+- Financial data is highly sensitive (PII, account numbers, balances)
+- LLMs must not be trained on or retain customer data
+- Data must stay within the institution's security perimeter
+- Cloud LLM usage must comply with the institution's data governance policies
+
+================================================================================
+11. WHAT SUCCESS LOOKS LIKE
+================================================================================
+
+- A QC analyst's monthly work is reduced from hours/days to reviewing a
+  pre-filled report and making judgment calls on ambiguous items
+- Adding a new QC process requires an SME to spend a few hours with the
+  system (not weeks of training), after which it runs automatically
+- The system improves with every QC onboarded — knowledge accumulates
+- Audit trail is automatic and complete
+- Human judgment is preserved for cases that genuinely need it
+- The system says "I don't know" (flags for human review) rather than
+  guessing when it's uncertain
+- No QC is ever closed or finalized without human sign-off
+
+================================================================================
+12. WHAT THIS IS NOT
+================================================================================
+
+- This is NOT an autonomous system that replaces QC analysts
+- This is NOT a system that takes production actions (close accounts, etc.)
+- This is NOT a chatbot or conversational interface
+- This is NOT a rules engine that someone manually programs rule by rule
+- This is an automation system that executes the checks and surfaces results
+  for human review — automation of execution, not automation of judgment
+
+================================================================================
+END OF PROBLEM STATEMENT
+================================================================================

@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic QC Automation — Flowchart</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .flowchart {
+            position: relative;
+            width: 900px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 600;
+            color: #e6edf3;
+            margin-bottom: 4px;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #7d8590;
+            margin-bottom: 48px;
+        }
+
+        /* ---- Phase Labels ---- */
+        .phase-marker {
+            text-align: center;
+            margin: 36px 0 20px;
+        }
+        .phase-marker span {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 4px 16px;
+            border-radius: 20px;
+            color: #fff;
+        }
+        .phase-marker.p0 span { background: #c62828; }
+        .phase-marker.pa span { background: #1565c0; }
+        .phase-marker.pb span { background: #7b1fa2; }
+        .phase-marker.out span { background: #e65100; }
+
+        /* ---- Nodes ---- */
+        .node-row {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            position: relative;
+        }
+
+        .node {
+            text-align: center;
+            border-radius: 10px;
+            padding: 14px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            min-width: 200px;
+            max-width: 280px;
+            position: relative;
+            line-height: 1.4;
+        }
+        .node .sub {
+            font-size: 11px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.7);
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+        .node .badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 8px;
+            margin-top: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Node colors */
+        .node-start    { background: #5c6d29; color: #fff; border-radius: 24px; min-width: 140px; }
+        .node-end      { background: #1a5c2a; color: #fff; border-radius: 24px; min-width: 140px; }
+        .node-process  { background: #1c2941; color: #e6edf3; border: 2px solid #2d4a7a; }
+        .node-human    { background: #2a1f3d; color: #e6edf3; border: 2px solid #6b4fa2; }
+        .node-ai       { background: #1c2941; color: #e6edf3; border: 2px solid #2d7ac4; }
+        .node-error    { background: #3d1f1f; color: #f5a5a5; border: 2px solid #8b3a3a; }
+        .node-output   { background: #1f3328; color: #a5e6b5; border: 2px solid #3a8b4f; }
+        .node-store    { background: #3d2b1f; color: #f5d5a5; border: 2px solid #8b6a3a; }
+
+        /* Decision diamond */
+        .diamond-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .diamond {
+            width: 180px;
+            height: 100px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .diamond-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #2a1f3d;
+            border: 2px solid #6b4fa2;
+            transform: rotate(45deg);
+            border-radius: 8px;
+        }
+        .diamond-text {
+            position: relative;
+            z-index: 1;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            color: #d4b5f7;
+            line-height: 1.3;
+        }
+
+        /* ---- Arrows ---- */
+        .arrow-down {
+            display: flex;
+            justify-content: center;
+            padding: 0;
+            height: 36px;
+            position: relative;
+        }
+        .arrow-down::before {
+            content: '';
+            width: 2px;
+            height: 100%;
+            background: #3d444d;
+        }
+        .arrow-down::after {
+            content: '▼';
+            position: absolute;
+            bottom: -2px;
+            font-size: 10px;
+            color: #3d444d;
+        }
+
+        .arrow-down.short { height: 24px; }
+        .arrow-down.tall  { height: 48px; }
+
+        /* Arrow labels */
+        .arrow-label {
+            position: absolute;
+            font-size: 10px;
+            color: #7d8590;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .arrow-label.right { left: calc(50% + 16px); top: 50%; transform: translateY(-50%); }
+        .arrow-label.left  { right: calc(50% + 16px); top: 50%; transform: translateY(-50%); }
+
+        /* ---- Branching layout ---- */
+        .branch-row {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 0;
+            position: relative;
+        }
+        .branch-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .branch-col.left  { margin-right: 40px; }
+        .branch-col.right { margin-left: 40px; }
+
+        /* Side nodes */
+        .side-node-row {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 60px;
+        }
+
+        /* Horizontal connectors */
+        .h-connector {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        .h-line {
+            width: 40px;
+            height: 2px;
+            background: #3d444d;
+        }
+        .h-arrow {
+            font-size: 10px;
+            color: #3d444d;
+        }
+
+        /* ---- Feedback Loop (visual) ---- */
+        .feedback-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 8px 0;
+        }
+        .feedback-arrow {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .feedback-arrow .line {
+            width: 40px;
+            height: 2px;
+            background: #3d6d44;
+            border-style: dashed;
+        }
+        .feedback-arrow .tip {
+            font-size: 10px;
+            color: #3d6d44;
+        }
+
+        /* ---- Parallel row ---- */
+        .parallel-row {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 30px;
+        }
+        .parallel-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ---- Section divider ---- */
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0;
+        }
+        .section-divider .line {
+            flex: 1;
+            height: 1px;
+            background: #21262d;
+        }
+
+        /* ---- Loop indicator ---- */
+        .loop-indicator {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .loop-line-v {
+            width: 2px;
+            background: #3d444d;
+            border-style: dashed;
+        }
+        .loop-line-h {
+            height: 2px;
+            background: #3d444d;
+            border-style: dashed;
+        }
+
+        /* ---- Three outcome badges ---- */
+        .outcome-row {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin: 4px 0;
+        }
+        .outcome {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 20px;
+            border-radius: 8px;
+        }
+        .outcome-pass   { background: #1a3d1f; color: #4caf50; border: 1px solid #2e7d32; }
+        .outcome-fail   { background: #3d1a1a; color: #e53935; border: 1px solid #c62828; }
+        .outcome-review { background: #3d2f1a; color: #ff9800; border: 1px solid #e65100; }
+
+        /* ---- SVG overlay for complex arrows ---- */
+        .svg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .node-row, .diamond-row, .arrow-down, .phase-marker, .parallel-row, .side-node-row, .outcome-row, .feedback-section {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="flowchart">
+        <h1>Agentic QC Automation</h1>
+        <p class="subtitle">End-to-End Process Flow</p>
+
+        <!-- ============ START ============ -->
+        <div class="node-row">
+            <div class="node node-start">Start</div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <!-- ============ PHASE 0 ============ -->
+        <div class="phase-marker p0"><span>Phase 0 — Experimentation</span></div>
+        <div class="arrow-down short"></div>
+
+        <div class="node-row">
+            <div class="node node-process">
+                Select 3-5 PnP Documents
+                <div class="sub">Vary complexity, BU, format</div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="node-row">
+            <div class="node node-ai">
+                Test LLM Parsing
+                <div class="sub">Feed PnPs to LLM, check extraction accuracy</div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="node-row">
+            <div class="node node-human">
+                SME Grades Output
+                <div class="sub">Score AI accuracy, identify misses</div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="diamond-row">
+            <div class="diamond">
+                <div class="diamond-bg"></div>
+                <div class="diamond-text">Accuracy<br>Level?</div>
+            </div>
+        </div>
+        <div class="arrow-down">
+            <span class="arrow-label right" style="top: 2px;">Determines Phase A path weighting</span>
+        </div>
+
+        <div class="outcome-row">
+            <div class="outcome outcome-pass">≥80% — AI Primary</div>
+            <div class="outcome outcome-review">50-80% — Mandatory Reflection</div>
+            <div class="outcome outcome-fail">&lt;50% — Fine-tuning Required</div>
+        </div>
+
+        <div class="arrow-down tall"></div>
+
+        <!-- ============ PHASE A ============ -->
+        <div class="phase-marker pa"><span>Phase A — Onboarding (Once Per QC)</span></div>
+        <div class="arrow-down short"></div>
+
+        <div class="node-row">
+            <div class="node node-process">
+                📄 PnP Document
+                <div class="sub">The existing policy document QC analysts follow</div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="node-row">
+            <div class="node node-ai">
+                🤖 AI Extracts Steps
+                <div class="sub">LLM reads PnP, extracts validation steps</div>
+                <div><span class="badge" style="background:#1565c0;">CoT</span></div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="node-row">
+            <div class="node node-ai">
+                🧩 AI Maps to Config
+                <div class="sub">Selects rule type, data source, fields.<br>Produces draft config.</div>
+                <div><span class="badge" style="background:#1565c0;">CoT</span> <span class="badge" style="background:#2e7d32;">Few-Shot</span></div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <!-- Decision: Rule type exists? -->
+        <div class="diamond-row">
+            <div class="diamond">
+                <div class="diamond-bg"></div>
+                <div class="diamond-text">Rule Type<br>Exists?</div>
+            </div>
+        </div>
+
+        <!-- Branch: Yes continues, No goes right -->
+        <div class="side-node-row">
+            <div class="parallel-col">
+                <div class="arrow-down">
+                    <span class="arrow-label left">Yes</span>
+                </div>
+            </div>
+            <div class="parallel-col">
+                <div style="display:flex; align-items:center; margin-top:16px;">
+                    <div style="width:80px; height:2px; background:#3d444d;"></div>
+                    <span style="font-size:10px; color:#7d8590; margin: 0 6px;">No</span>
+                    <div style="width:20px; height:2px; background:#3d444d;"></div>
+                    <span style="font-size:10px; color:#3d444d;">▶</span>
+                </div>
+                <div class="node node-error" style="margin-top: -10px; min-width: 180px;">
+                    ⚠️ Engineering Builds New Rule
+                    <div class="sub">New rule → available to all QCs</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="node-row">
+            <div class="node node-ai" style="max-width: 360px;">
+                🔍 AI Gap Analysis
+                <div class="sub">
+                    <strong style="color:#6bb5f7;">Reasoning:</strong> Gaps found in this PnP<br>
+                    <strong style="color:#7dd693;">Memory:</strong> Gaps predicted from past QCs
+                </div>
+                <div><span class="badge" style="background:#1565c0;">CoT</span> <span class="badge" style="background:#2e7d32;">Few-Shot from Correction Store</span></div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="node-row">
+            <div class="node node-human" style="max-width: 360px;">
+                🤝 SME Collaborative Review
+                <div class="sub">
+                    1. Answer AI's questions<br>
+                    2. Confirm/reject AI predictions<br>
+                    3. Add domain knowledge
+                </div>
+                <div><span class="badge" style="background:#6b4fa2;">Human-in-the-Loop</span> <span class="badge" style="background:#8b3a3a;">Domain Knowledge</span></div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <!-- Reflection loop -->
+        <div class="node-row">
+            <div class="node node-ai" id="reflection-node">
+                🔄 AI Self-Review (Reflection)
+                <div class="sub">Check for missed steps, wrong mappings, inconsistencies</div>
+                <div><span class="badge" style="background:#1565c0;">Reflection</span></div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="diamond-row">
+            <div class="diamond">
+                <div class="diamond-bg"></div>
+                <div class="diamond-text">Config<br>Consistent?</div>
+            </div>
+        </div>
+
+        <!-- Branch: Consistent? -->
+        <div class="side-node-row">
+            <div class="parallel-col">
+                <div class="arrow-down">
+                    <span class="arrow-label left">Yes</span>
+                </div>
+            </div>
+            <div class="parallel-col">
+                <div style="display:flex; align-items:center; margin-top:16px;">
+                    <div style="width:50px; height:2px; background:#3d444d;"></div>
+                    <span style="font-size:10px; color:#7d8590; margin: 0 6px;">No</span>
+                    <div style="width:20px; height:2px; background:#3d444d;"></div>
+                    <span style="font-size:10px; color:#3d444d;">▶</span>
+                </div>
+                <div class="diamond" style="width:150px; height:80px; margin-top:-6px;">
+                    <div class="diamond-bg"></div>
+                    <div class="diamond-text" style="font-size:11px;">Iterations<br>&lt; 3?</div>
+                </div>
+                <div style="display:flex; gap: 40px; margin-top: 10px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:10px; color:#4caf50; font-weight:600; margin-bottom:4px;">Yes</div>
+                        <div style="font-size:10px; color:#7d8590;">↩ Loop back<br>to Reflection</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:10px; color:#e53935; font-weight:600; margin-bottom:4px;">No</div>
+                        <div style="font-size:10px; color:#7d8590;">Flag items<br>for SME</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="node-row">
+            <div class="node node-human">
+                ✅ SME Final Approval
+                <div class="sub">Reviews, adjusts, or overrides. Nothing runs without sign-off.</div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="node-row">
+            <div class="node node-output">
+                🔒 Locked &amp; Versioned Config
+                <div class="sub">Single source of truth for this QC</div>
+            </div>
+        </div>
+
+        <!-- Correction Store feedback -->
+        <div class="arrow-down short"></div>
+        <div class="side-node-row" style="gap: 30px;">
+            <div class="parallel-col">
+                <div class="arrow-down short"></div>
+            </div>
+            <div class="parallel-col" style="margin-top: 6px;">
+                <div class="node node-store" style="min-width: 260px;">
+                    🧠 Correction Store
+                    <div class="sub">
+                        SME corrections + gap-fills stored as long-term memory.<br>
+                        Fed back into Extract, Gap Analysis, and Phase B.
+                    </div>
+                    <div><span class="badge" style="background:#8b6a3a;">few-shot → RAG → fine-tune</span></div>
+                </div>
+                <div style="margin-top: 8px;">
+                    <span style="font-size:10px; color:#3d6d44;">- - - ↩ feeds back into AI steps - - -</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="arrow-down tall"></div>
+
+        <!-- ============ PHASE B ============ -->
+        <div class="phase-marker pb"><span>Phase B — Monthly Execution</span></div>
+        <div class="arrow-down short"></div>
+
+        <div class="node-row">
+            <div class="node node-process">
+                ⏰ Scheduled Batch Trigger
+                <div class="sub">Monthly schedule · Manual re-run available</div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="node-row">
+            <div class="node node-ai" style="max-width: 320px;">
+                🤖 LLM Orchestrator
+                <div class="sub">Reads locked config, reasons through execution — tool call order, dependencies, fallback logic</div>
+                <div><span class="badge" style="background:#7b1fa2;">Tool Use</span> <span class="badge" style="background:#1565c0;">CoT</span></div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="node-row">
+            <div class="node node-ai" style="max-width: 320px;">
+                🔁 For Each Account in Sample
+                <div class="sub">
+                    1. Call connectors (multi-hop: acct→case→doc)<br>
+                    2. Call rule functions<br>
+                    3. Return PASS / FAIL / REVIEW + evidence
+                </div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="node-row">
+            <div class="node node-output" style="max-width: 320px;">
+                ✅ Deterministic Verification Layer
+                <div class="sub">Python (no AI) audits the LLM's execution — all steps run? Correct tools? Any invented?</div>
+                <div><span class="badge" style="background:#2e7d32;">Deterministic</span> <span class="badge" style="background:#555;">Audit Guard</span></div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="diamond-row">
+            <div class="diamond">
+                <div class="diamond-bg"></div>
+                <div class="diamond-text">Verification<br>Passed?</div>
+            </div>
+        </div>
+
+        <div class="side-node-row">
+            <div class="parallel-col">
+                <div class="arrow-down">
+                    <span class="arrow-label left">Yes</span>
+                </div>
+            </div>
+            <div class="parallel-col">
+                <div style="display:flex; align-items:center; margin-top:16px;">
+                    <div style="width:60px; height:2px; background:#3d444d;"></div>
+                    <span style="font-size:10px; color:#7d8590; margin: 0 6px;">No</span>
+                    <div style="width:20px; height:2px; background:#3d444d;"></div>
+                    <span style="font-size:10px; color:#3d444d;">▶</span>
+                </div>
+                <div class="node node-error" style="margin-top:-10px; min-width:200px;">
+                    Entire QC → REVIEW
+                    <div class="sub">Flagged with reason for human review</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="node-row">
+            <div class="node node-process">
+                📊 Generate Report
+                <div class="sub">Excel: PASS / FAIL / REVIEW per check with evidence</div>
+            </div>
+        </div>
+
+        <div class="arrow-down tall"></div>
+
+        <!-- ============ OUTPUT ============ -->
+        <div class="phase-marker out"><span>Output — Human Review</span></div>
+        <div class="arrow-down short"></div>
+
+        <div class="node-row">
+            <div class="node node-process">
+                📋 Structured Excel Report
+                <div class="sub">Same format teams use today</div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="node-row">
+            <div class="node node-human">
+                🖥️ SME Review Dashboard
+                <div class="sub">Focus on REVIEW items first. Spot-check PASS/FAIL.</div>
+            </div>
+        </div>
+        <div class="arrow-down"></div>
+
+        <div class="node-row">
+            <div class="node node-human">
+                ✅ Human Final Approval
+                <div class="sub">Human has final sign-off. System assists — does not decide.</div>
+            </div>
+        </div>
+
+        <div class="arrow-down"></div>
+
+        <!-- ============ END ============ -->
+        <div class="node-row">
+            <div class="node node-end">End</div>
+        </div>
+
+        <!-- ============ LEGEND ============ -->
+        <div style="margin-top: 48px; display: flex; justify-content: center;">
+            <div style="background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 20px 32px; display: inline-flex; gap: 24px; flex-wrap: wrap; align-items: center;">
+                <div style="font-size: 11px; font-weight: 700; color: #7d8590; letter-spacing: 1px; text-transform: uppercase;">Legend</div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:16px; height:16px; background:#1c2941; border:2px solid #2d7ac4; border-radius:4px;"></div>
+                    <span style="font-size:11px; color:#8b949e;">AI Step</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:16px; height:16px; background:#2a1f3d; border:2px solid #6b4fa2; border-radius:4px;"></div>
+                    <span style="font-size:11px; color:#8b949e;">Human Step</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:16px; height:16px; background:#1f3328; border:2px solid #3a8b4f; border-radius:4px;"></div>
+                    <span style="font-size:11px; color:#8b949e;">Verification / Output</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:16px; height:16px; background:#3d2b1f; border:2px solid #8b6a3a; border-radius:4px;"></div>
+                    <span style="font-size:11px; color:#8b949e;">Memory Store</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:16px; height:16px; background:#3d1f1f; border:2px solid #8b3a3a; border-radius:4px;"></div>
+                    <span style="font-size:11px; color:#8b949e;">Error / Escalation</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="width:16px; height:16px; background:#2a1f3d; border:2px solid #6b4fa2; transform:rotate(45deg); border-radius:3px;"></div>
+                    <span style="font-size:11px; color:#8b949e;">Decision</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
