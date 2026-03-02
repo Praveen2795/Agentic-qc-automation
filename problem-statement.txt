@@ -89,6 +89,10 @@ This is done every month, for every QC, for every account in the sample.
 - Institutional knowledge lives in people's heads, not in systems
 - When an analyst leaves, their tribal knowledge goes with them
 - Onboarding a new analyst to a complex QC takes weeks
+- WITH 300+ QCs AND A TARGET OF 30-40 NEW QCs PER QUARTER, the manual
+  approach simply cannot keep up. This is not a problem that can be
+  solved by hiring — the knowledge transfer bottleneck is the constraint,
+  not headcount.
 
 4.4 INCONSISTENT
 - Different analysts may interpret the same PnP step differently
@@ -383,11 +387,28 @@ attempting to automate the judgment itself.
 - Different business units may have different priorities and timelines
 - Change management — analysts need to trust the system before relying on it
 
-10.4 SCALE
+10.4 SCALE — THE DEFINING CONSTRAINT
+- THIS IS THE MOST IMPORTANT CONSTRAINT IN THE ENTIRE PROJECT.
+- Without scalability, this is just another automation project — one team
+  building bespoke scripts for one QC at a time. That approach cannot
+  cover 300+ QCs in any reasonable timeframe.
 - Target: onboard 30-40 QCs per quarter once the system is production-ready
-- 300+ total QCs means multi-year rollout
+- 300+ total QCs means multi-year rollout even at 30-40/quarter
 - The system must get better over time, not stay static
 - Adding a new QC should ideally require zero code changes — just configuration
+- WHAT MAKES THIS AGENTIC (NOT JUST AUTOMATION):
+  The system must be able to read a new PnP document it has never seen,
+  understand the validation steps, map them to existing rules, identify
+  gaps, and produce a working configuration — with minimal human input.
+  If every new QC requires weeks of engineering work, the economics don't
+  work and leadership will (rightly) question why we didn't just hire
+  more analysts.
+- The onboarding cost per QC must DECREASE over time as the system learns
+  from past QCs (via accumulated corrections, gap patterns, and domain
+  knowledge). QC #1 will be hard. QC #50 should be significantly faster.
+  QC #200 should be near-automatic.
+- This scaling property is what justifies the upfront investment in an
+  agentic architecture. Without it, a simpler approach would suffice.
 
 10.5 DATA SENSITIVITY
 - Financial data is highly sensitive (PII, account numbers, balances)
@@ -409,6 +430,10 @@ attempting to automate the judgment itself.
 - The system says "I don't know" (flags for human review) rather than
   guessing when it's uncertain
 - No QC is ever closed or finalized without human sign-off
+- CRITICALLY: onboarding a new QC takes hours (not weeks), and the effort
+  per QC decreases over time as the system accumulates domain knowledge.
+  By QC #50+, most onboardings are near-automatic with SME confirmation.
+  This is what makes the 30-40 QCs/quarter target achievable.
 
 ================================================================================
 12. WHAT THIS IS NOT
